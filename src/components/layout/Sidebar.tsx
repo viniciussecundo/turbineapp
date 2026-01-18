@@ -1,32 +1,34 @@
-import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Wallet, 
-  Users, 
-  FileText, 
-  BarChart3, 
+import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import {
+  LayoutDashboard,
+  Wallet,
+  Users,
+  FileText,
+  BarChart3,
   ChevronRight,
   Rocket,
   Settings,
   X,
-  Menu
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+  Menu,
+  Target,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 const navItems = [
-  { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/financas', label: 'Finanças', icon: Wallet },
-  { path: '/clientes', label: 'Clientes', icon: Users },
-  { path: '/orcamentos', label: 'Orçamentos', icon: FileText },
-  { path: '/relatorios', label: 'Relatórios', icon: BarChart3 },
+  { path: "/", label: "Dashboard", icon: LayoutDashboard },
+  { path: "/financas", label: "Finanças", icon: Wallet },
+  { path: "/clientes", label: "Clientes", icon: Users },
+  { path: "/leads", label: "Leads", icon: Target },
+  { path: "/orcamentos", label: "Orçamentos", icon: FileText },
+  { path: "/relatorios", label: "Relatórios", icon: BarChart3 },
 ];
 
 const quickAccess = [
-  { label: 'Status Serviços', color: 'bg-success' },
-  { label: 'Pendentes', color: 'bg-warning' },
+  { label: "Status Serviços", color: "bg-success" },
+  { label: "Pendentes", color: "bg-warning" },
 ];
 
 interface SidebarProps {
@@ -41,16 +43,18 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     <>
       {/* Mobile overlay */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden transition-opacity"
           onClick={onClose}
         />
       )}
 
-      <aside className={cn(
-        "fixed md:relative z-50 h-full w-64 flex flex-col border-r border-sidebar-border bg-sidebar transition-transform duration-300 md:translate-x-0",
-        isOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
+      <aside
+        className={cn(
+          "fixed md:relative z-50 h-full w-64 flex flex-col border-r border-sidebar-border bg-sidebar transition-transform duration-300 md:translate-x-0",
+          isOpen ? "translate-x-0" : "-translate-x-full",
+        )}
+      >
         {/* Header */}
         <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-6">
           <div className="flex items-center gap-2 font-display font-bold text-xl tracking-tight">
@@ -61,10 +65,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               TURBINE <span className="text-primary">APP</span>
             </span>
           </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="md:hidden" 
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
             onClick={onClose}
           >
             <X className="h-5 w-5" />
@@ -77,19 +81,25 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
               const Icon = item.icon;
-              
+
               return (
                 <Link key={item.path} to={item.path} onClick={onClose}>
-                  <div className={cn(
-                    "group flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                    isActive 
-                      ? "bg-sidebar-accent text-primary shadow-sm ring-1 ring-white/5" 
-                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-white"
-                  )}>
-                    <Icon className={cn(
-                      "h-4 w-4 transition-colors",
-                      isActive ? "text-primary" : "text-muted-foreground group-hover:text-white"
-                    )} />
+                  <div
+                    className={cn(
+                      "group flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                      isActive
+                        ? "bg-sidebar-accent text-primary shadow-sm ring-1 ring-white/5"
+                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-white",
+                    )}
+                  >
+                    <Icon
+                      className={cn(
+                        "h-4 w-4 transition-colors",
+                        isActive
+                          ? "text-primary"
+                          : "text-muted-foreground group-hover:text-white",
+                      )}
+                    />
                     {item.label}
                     {isActive && (
                       <ChevronRight className="ml-auto h-4 w-4 text-primary/50" />
