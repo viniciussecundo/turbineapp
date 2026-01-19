@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { DataProvider } from "./contexts/DataContext";
 import { AppLayout } from "./components/layout/AppLayout";
+import { PageTransition } from "./components/PageTransition";
 import Index from "./pages/Index";
 import Financas from "./pages/Financas";
 import Clientes from "./pages/Clientes";
@@ -23,21 +24,23 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            {/* Rota pública - sem layout */}
-            <Route path="/cadastro" element={<CadastroPublico />} />
+          <PageTransition>
+            <Routes>
+              {/* Rota pública - sem layout */}
+              <Route path="/cadastro" element={<CadastroPublico />} />
 
-            {/* Rotas internas - com layout */}
-            <Route element={<AppLayout />}>
-              <Route path="/" element={<Index />} />
-              <Route path="/financas" element={<Financas />} />
-              <Route path="/clientes" element={<Clientes />} />
-              <Route path="/leads" element={<Leads />} />
-              <Route path="/orcamentos" element={<Orcamentos />} />
-              <Route path="/relatorios" element={<Relatorios />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              {/* Rotas internas - com layout */}
+              <Route element={<AppLayout />}>
+                <Route path="/" element={<Index />} />
+                <Route path="/financas" element={<Financas />} />
+                <Route path="/clientes" element={<Clientes />} />
+                <Route path="/leads" element={<Leads />} />
+                <Route path="/orcamentos" element={<Orcamentos />} />
+                <Route path="/relatorios" element={<Relatorios />} />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </PageTransition>
         </BrowserRouter>
       </TooltipProvider>
     </DataProvider>

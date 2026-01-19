@@ -57,14 +57,17 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       >
         {/* Header */}
         <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-6">
-          <div className="flex items-center gap-2 font-display font-bold text-xl tracking-tight">
+          <Link
+            to="/"
+            className="flex items-center gap-2 font-display font-bold text-xl tracking-tight hover:opacity-80 transition-opacity"
+          >
             <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary text-white shadow-lg glow-primary">
               <Rocket className="h-5 w-5" />
             </div>
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
               TURBINE <span className="text-primary">APP</span>
             </span>
-          </div>
+          </Link>
           <Button
             variant="ghost"
             size="icon"

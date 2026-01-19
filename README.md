@@ -1,73 +1,95 @@
-# Welcome to your Lovable project
+# 🚀 TurbineApp
 
-## Project info
+CRM completo para gestão de clientes e leads, desenvolvido com React + TypeScript.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## 📋 Sobre o Projeto
 
-## How can I edit this code?
+TurbineApp é um sistema de CRM moderno e intuitivo para gerenciar seu funil de vendas, clientes e leads de forma eficiente.
 
-There are several ways of editing your application.
+### ✨ Funcionalidades
 
-**Use Lovable**
+- **Gestão de Leads**: Funil visual com status (Novo, Contato, Proposta, Fechado)
+- **Gestão de Clientes**: Cadastro completo com análise de perfil
+- **Link Compartilhável**: Página pública para auto-cadastro de leads (`/cadastro`)
+- **Persistência de Dados**: Dados salvos no LocalStorage
+- **Linhas Expansíveis**: Detalhes adicionais ao clicar em leads/clientes
+- **Campos de Tráfego**: Seguidores, posts, orçamento mensal
+- **Análise de Perfil**: Segmento, objetivo, público-alvo, score
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## 🛠️ Tecnologias Utilizadas
 
-Changes made via Lovable will be committed automatically to this repo.
+- **Vite** - Build tool rápido
+- **TypeScript** - Tipagem estática
+- **React** - Biblioteca de UI
+- **shadcn/ui** - Componentes de interface
+- **Tailwind CSS** - Estilização utilitária
+- **React Router** - Navegação
 
-**Use your preferred IDE**
+## 🚀 Como Executar
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Pré-requisitos
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- Node.js instalado - [instalar com nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- npm ou bun
 
-Follow these steps:
+### Instalação
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# 1. Clone o repositório
+git clone <URL_DO_REPOSITORIO>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# 2. Entre na pasta do projeto
+cd turbineapp
 
-# Step 3: Install the necessary dependencies.
-npm i
+# 3. Instale as dependências
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# 4. Inicie o servidor de desenvolvimento
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+O projeto estará disponível em `http://localhost:8081`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 📁 Estrutura do Projeto
 
-**Use GitHub Codespaces**
+```
+src/
+├── components/       # Componentes reutilizáveis
+│   ├── ui/          # Componentes shadcn/ui
+│   ├── layout/      # Layout (Sidebar, Header)
+│   └── dashboard/   # Componentes do dashboard
+├── contexts/        # Contextos React (DataContext)
+├── pages/           # Páginas da aplicação
+│   ├── Index.tsx    # Dashboard
+│   ├── Leads.tsx    # Gestão de leads
+│   ├── Clientes.tsx # Gestão de clientes
+│   └── CadastroPublico.tsx # Página pública
+├── hooks/           # Hooks customizados
+└── lib/             # Utilitários
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🔧 Configuração de Origem dos Leads
 
-## What technologies are used for this project?
+Para adicionar novas origens de leads, edite dois arquivos:
 
-This project is built with:
+1. **Tipo** em `src/contexts/DataContext.tsx`:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```typescript
+export type LeadOrigin = "site" | "instagram" | "nova_origem";
+```
 
-## How can I deploy this project?
+2. **Config** em `src/pages/Leads.tsx`:
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+```typescript
+const originConfig = {
+  nova_origem: { label: "Nova Origem", icon: Globe },
+};
+```
 
-## Can I connect a custom domain to my Lovable project?
+## 📄 Licença
 
-Yes, you can!
+Este projeto é privado.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+---
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Desenvolvido com 💜 por **TurbineTech**
