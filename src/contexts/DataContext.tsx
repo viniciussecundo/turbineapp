@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 
 // Types
 export type LeadStatus = "novo" | "contato" | "proposta" | "fechado";
@@ -23,7 +29,49 @@ export interface Lead {
   createdAt: string;
   notes?: string;
   convertedToClientId?: number;
+  selfRegistered?: boolean; // true se o lead se cadastrou pelo link público
+  // Dados para gestão de tráfego
+  followers?: number; // número de seguidores
+  posts?: number; // número de posts
+  monthlyBudget?: number; // orçamento mensal para gestão de tráfego
 }
+
+// ========================================
+// ANÁLISE DE PERFIL DO CLIENTE
+// Adicione/remova campos conforme necessário
+// ========================================
+export type ClientGoal = "sales" | "engagement" | "branding" | "leads";
+
+export const CLIENT_GOALS: Record<ClientGoal, string> = {
+  sales: "Vendas",
+  engagement: "Engajamento",
+  branding: "Branding",
+  leads: "Geração de Leads",
+};
+
+export const CLIENT_SEGMENTS = [
+  "Restaurante",
+  "E-commerce",
+  "Saúde",
+  "Educação",
+  "Moda",
+  "Tecnologia",
+  "Serviços",
+  "Varejo",
+  "Imobiliário",
+  "Fitness",
+  "Beleza",
+  "Outro",
+] as const;
+
+export interface ProfileAnalysis {
+  segment: string; // Segmento de mercado
+  targetAudience: string; // Público-alvo
+  mainGoal: ClientGoal; // Objetivo principal
+  overallScore: number; // 1-10 avaliação geral
+  notes: string; // Observações detalhadas
+}
+// ========================================
 
 export interface Client {
   id: number;
@@ -43,6 +91,7 @@ export interface Client {
   };
   leadId?: number; // Referência ao lead original
   origin?: LeadOrigin;
+  profileAnalysis?: ProfileAnalysis; // Análise do perfil
 }
 
 // Initial Data
@@ -192,7 +241,10 @@ const initialClients: Client[] = [
 interface DataContextType {
   // Leads
   leads: Lead[];
-  addLead: (lead: Omit<Lead, "id" | "createdAt" | "status">) => void;
+  addLead: (
+    lead: Omit<Lead, "id" | "createdAt" | "status">,
+    selfRegistered?: boolean,
+  ) => void;
   updateLeadStatus: (leadId: number, status: LeadStatus) => void;
   deleteLead: (leadId: number) => boolean;
   convertLeadToClient: (
@@ -213,17 +265,56 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
+// LocalStorage keys
+const LEADS_STORAGE_KEY = "turbine_leads";
+const CLIENTS_STORAGE_KEY = "turbine_clients";
+
+// Helper functions para LocalStorage
+const loadFromStorage = <T,>(key: string, fallback: T): T => {
+  try {
+    const stored = localStorage.getItem(key);
+    return stored ? JSON.parse(stored) : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+const saveToStorage = <T,>(key: string, data: T): void => {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (error) {
+    console.error("Error saving to localStorage:", error);
+  }
+};
+
 export function DataProvider({ children }: { children: ReactNode }) {
-  const [leads, setLeads] = useState<Lead[]>(initialLeads);
-  const [clients, setClients] = useState<Client[]>(initialClients);
+  const [leads, setLeads] = useState<Lead[]>(() =>
+    loadFromStorage(LEADS_STORAGE_KEY, initialLeads),
+  );
+  const [clients, setClients] = useState<Client[]>(() =>
+    loadFromStorage(CLIENTS_STORAGE_KEY, initialClients),
+  );
+
+  // Salvar no LocalStorage quando os dados mudarem
+  useEffect(() => {
+    saveToStorage(LEADS_STORAGE_KEY, leads);
+  }, [leads]);
+
+  useEffect(() => {
+    saveToStorage(CLIENTS_STORAGE_KEY, clients);
+  }, [clients]);
 
   // Lead Functions
-  const addLead = (leadData: Omit<Lead, "id" | "createdAt" | "status">) => {
+  const addLead = (
+    leadData: Omit<Lead, "id" | "createdAt" | "status">,
+    selfRegistered: boolean = false,
+  ) => {
     const newLead: Lead = {
       ...leadData,
       id: Math.max(...leads.map((l) => l.id), 0) + 1,
       status: "novo",
       createdAt: new Date().toISOString().split("T")[0],
+      selfRegistered,
     };
     setLeads([newLead, ...leads]);
   };

@@ -11,6 +11,7 @@ import Clientes from "./pages/Clientes";
 import Leads from "./pages/Leads";
 import Orcamentos from "./pages/Orcamentos";
 import Relatorios from "./pages/Relatorios";
+import CadastroPublico from "./pages/CadastroPublico";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,10 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+            {/* Rota pública - sem layout */}
+            <Route path="/cadastro" element={<CadastroPublico />} />
+
+            {/* Rotas internas - com layout */}
             <Route element={<AppLayout />}>
               <Route path="/" element={<Index />} />
               <Route path="/financas" element={<Financas />} />

@@ -20,6 +20,9 @@ import {
   Building2,
   DollarSign,
   FolderOpen,
+  Star,
+  UserCircle,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,7 +51,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useData, Client, ClientStatus } from "@/contexts/DataContext";
+import { Textarea } from "@/components/ui/textarea";
+import { Slider } from "@/components/ui/slider";
+import {
+  useData,
+  Client,
+  ClientStatus,
+  ClientGoal,
+  CLIENT_GOALS,
+  CLIENT_SEGMENTS,
+} from "@/contexts/DataContext";
 import { useNavigate } from "react-router-dom";
 
 const statusConfig: Record<ClientStatus, { label: string; className: string }> =
@@ -101,6 +113,12 @@ export default function Clientes() {
     facebook: "",
     linkedin: "",
     twitter: "",
+    // Análise de Perfil
+    segment: "",
+    targetAudience: "",
+    mainGoal: "sales" as ClientGoal,
+    overallScore: 5,
+    analysisNotes: "",
   });
 
   // Filtro de clientes
@@ -130,7 +148,9 @@ export default function Clientes() {
     totalValue: clients.reduce((sum, c) => sum + c.value, 0),
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -155,6 +175,15 @@ export default function Clientes() {
         linkedin: formData.linkedin || undefined,
         twitter: formData.twitter || undefined,
       },
+      profileAnalysis: formData.segment
+        ? {
+            segment: formData.segment,
+            targetAudience: formData.targetAudience,
+            mainGoal: formData.mainGoal,
+            overallScore: formData.overallScore,
+            notes: formData.analysisNotes,
+          }
+        : undefined,
     });
 
     setIsDialogOpen(false);
@@ -171,6 +200,11 @@ export default function Clientes() {
       facebook: "",
       linkedin: "",
       twitter: "",
+      segment: "",
+      targetAudience: "",
+      mainGoal: "sales",
+      overallScore: 5,
+      analysisNotes: "",
     });
   };
 
@@ -193,6 +227,11 @@ export default function Clientes() {
       facebook: client.socialMedia?.facebook || "",
       linkedin: client.socialMedia?.linkedin || "",
       twitter: client.socialMedia?.twitter || "",
+      segment: client.profileAnalysis?.segment || "",
+      targetAudience: client.profileAnalysis?.targetAudience || "",
+      mainGoal: client.profileAnalysis?.mainGoal || "sales",
+      overallScore: client.profileAnalysis?.overallScore || 5,
+      analysisNotes: client.profileAnalysis?.notes || "",
     });
     setIsEditDialogOpen(true);
   };
@@ -212,6 +251,15 @@ export default function Clientes() {
         linkedin: formData.linkedin || undefined,
         twitter: formData.twitter || undefined,
       },
+      profileAnalysis: formData.segment
+        ? {
+            segment: formData.segment,
+            targetAudience: formData.targetAudience,
+            mainGoal: formData.mainGoal,
+            overallScore: formData.overallScore,
+            notes: formData.analysisNotes,
+          }
+        : undefined,
     });
 
     setIsEditDialogOpen(false);
@@ -578,114 +626,134 @@ export default function Clientes() {
                         <td colSpan={7} className="px-4 py-0">
                           <div className="py-4 pl-12 animate-in slide-in-from-top-2 duration-200">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                              {/* Coluna 1 - Contato */}
+                              {/* Coluna 1 - Redes Sociais */}
                               <div className="space-y-3">
                                 <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                                  <Mail className="h-4 w-4 text-primary" />
-                                  Informações de Contato
+                                  <Instagram className="h-4 w-4 text-primary" />
+                                  Redes Sociais
                                 </h4>
-                                <div className="space-y-2 text-sm">
-                                  <div className="flex items-center gap-2 text-muted-foreground">
-                                    <Mail className="h-3 w-3" />
-                                    <span>{client.email}</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-muted-foreground">
-                                    <Phone className="h-3 w-3" />
-                                    <span>{client.phone}</span>
-                                  </div>
-                                  {client.responsible && (
-                                    <div className="flex items-center gap-2 text-muted-foreground">
-                                      <Users className="h-3 w-3" />
-                                      <span>Resp: {client.responsible}</span>
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Redes Sociais */}
                                 {client.socialMedia &&
-                                  Object.values(client.socialMedia).some(
-                                    (v) => v,
-                                  ) && (
-                                    <div className="pt-2 space-y-2">
-                                      <p className="text-xs text-muted-foreground font-medium">
-                                        Redes Sociais
-                                      </p>
-                                      <div className="flex flex-wrap gap-2">
-                                        {client.socialMedia.instagram && (
-                                          <Badge
-                                            variant="outline"
-                                            className="text-xs"
-                                          >
-                                            <Instagram className="h-3 w-3 mr-1 text-pink-400" />
-                                            {client.socialMedia.instagram}
-                                          </Badge>
-                                        )}
-                                        {client.socialMedia.facebook && (
-                                          <Badge
-                                            variant="outline"
-                                            className="text-xs"
-                                          >
-                                            <Facebook className="h-3 w-3 mr-1 text-blue-400" />
-                                            {client.socialMedia.facebook}
-                                          </Badge>
-                                        )}
-                                        {client.socialMedia.linkedin && (
-                                          <Badge
-                                            variant="outline"
-                                            className="text-xs"
-                                          >
-                                            <Linkedin className="h-3 w-3 mr-1 text-blue-500" />
-                                            {client.socialMedia.linkedin}
-                                          </Badge>
-                                        )}
-                                        {client.socialMedia.twitter && (
-                                          <Badge
-                                            variant="outline"
-                                            className="text-xs"
-                                          >
-                                            <Twitter className="h-3 w-3 mr-1 text-sky-400" />
-                                            {client.socialMedia.twitter}
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    </div>
-                                  )}
+                                Object.values(client.socialMedia).some(
+                                  (v) => v,
+                                ) ? (
+                                  <div className="flex flex-wrap gap-2">
+                                    {client.socialMedia.instagram && (
+                                      <Badge
+                                        variant="outline"
+                                        className="text-xs"
+                                      >
+                                        <Instagram className="h-3 w-3 mr-1 text-pink-400" />
+                                        {client.socialMedia.instagram}
+                                      </Badge>
+                                    )}
+                                    {client.socialMedia.facebook && (
+                                      <Badge
+                                        variant="outline"
+                                        className="text-xs"
+                                      >
+                                        <Facebook className="h-3 w-3 mr-1 text-blue-400" />
+                                        {client.socialMedia.facebook}
+                                      </Badge>
+                                    )}
+                                    {client.socialMedia.linkedin && (
+                                      <Badge
+                                        variant="outline"
+                                        className="text-xs"
+                                      >
+                                        <Linkedin className="h-3 w-3 mr-1 text-blue-500" />
+                                        {client.socialMedia.linkedin}
+                                      </Badge>
+                                    )}
+                                    {client.socialMedia.twitter && (
+                                      <Badge
+                                        variant="outline"
+                                        className="text-xs"
+                                      >
+                                        <Twitter className="h-3 w-3 mr-1 text-sky-400" />
+                                        {client.socialMedia.twitter}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <p className="text-sm text-muted-foreground/60 italic">
+                                    Nenhuma rede social cadastrada
+                                  </p>
+                                )}
                               </div>
 
-                              {/* Coluna 2 - Dados Comerciais */}
+                              {/* Coluna 2 - Análise de Perfil */}
                               <div className="space-y-3">
                                 <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                                  <DollarSign className="h-4 w-4 text-primary" />
-                                  Dados Comerciais
+                                  <FileText className="h-4 w-4 text-primary" />
+                                  Análise de Perfil
                                 </h4>
-                                <div className="grid grid-cols-2 gap-3">
-                                  <div className="glass rounded-lg p-3">
-                                    <div className="flex items-center gap-2">
-                                      <FolderOpen className="h-4 w-4 text-muted-foreground" />
-                                      <div>
-                                        <p className="text-lg font-bold text-foreground">
-                                          {client.projects}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                          Projetos
-                                        </p>
+                                {client.profileAnalysis ? (
+                                  <div className="space-y-2 text-sm">
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                      <Building2 className="h-3 w-3" />
+                                      Segmento:{" "}
+                                      <span className="text-foreground">
+                                        {client.profileAnalysis.segment}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                      <Target className="h-3 w-3" />
+                                      Objetivo:{" "}
+                                      <span className="text-foreground">
+                                        {
+                                          CLIENT_GOALS[
+                                            client.profileAnalysis.mainGoal
+                                          ]
+                                        }
+                                      </span>
+                                    </div>
+                                    {client.profileAnalysis.targetAudience && (
+                                      <div className="flex items-center gap-2 text-muted-foreground">
+                                        <UserCircle className="h-3 w-3" />
+                                        <span className="text-foreground text-xs">
+                                          {
+                                            client.profileAnalysis
+                                              .targetAudience
+                                          }
+                                        </span>
+                                      </div>
+                                    )}
+                                    <div className="flex items-center gap-2 pt-1">
+                                      <Star className="h-3 w-3 text-primary fill-primary" />
+                                      <span className="text-sm font-medium text-primary">
+                                        {client.profileAnalysis.overallScore}/10
+                                      </span>
+                                      <div className="flex-1 h-2 bg-sidebar-accent rounded-full overflow-hidden">
+                                        <div
+                                          className="h-full gradient-primary rounded-full"
+                                          style={{
+                                            width: `${client.profileAnalysis.overallScore * 10}%`,
+                                          }}
+                                        />
                                       </div>
                                     </div>
+                                    {client.profileAnalysis.notes && (
+                                      <p className="text-xs text-muted-foreground bg-sidebar-accent/30 p-2 rounded mt-2">
+                                        {client.profileAnalysis.notes}
+                                      </p>
+                                    )}
                                   </div>
-                                  <div className="glass rounded-lg p-3">
-                                    <div className="flex items-center gap-2">
-                                      <DollarSign className="h-4 w-4 text-muted-foreground" />
-                                      <div>
-                                        <p className="text-lg font-bold text-foreground">
-                                          R$ {(client.value / 1000).toFixed(0)}k
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                          Valor Total
-                                        </p>
-                                      </div>
-                                    </div>
+                                ) : (
+                                  <div className="text-sm text-muted-foreground/60 italic">
+                                    Análise não preenchida
+                                    <Button
+                                      variant="link"
+                                      size="sm"
+                                      className="text-primary p-0 h-auto ml-2"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleEditClick(client);
+                                      }}
+                                    >
+                                      Adicionar
+                                    </Button>
                                   </div>
-                                </div>
+                                )}
                               </div>
 
                               {/* Coluna 3 - Origem / Lead */}
@@ -948,6 +1016,106 @@ export default function Clientes() {
                   </div>
                 </div>
               </div>
+
+              {/* Análise de Perfil */}
+              <div className="space-y-4 pt-4 border-t border-sidebar-border">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                  Análise de Perfil
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="segment">Segmento de Mercado</Label>
+                    <Select
+                      value={formData.segment}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, segment: value })
+                      }
+                    >
+                      <SelectTrigger className="bg-sidebar-accent/50 border-white/10">
+                        <SelectValue placeholder="Selecione o segmento" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CLIENT_SEGMENTS.map((segment) => (
+                          <SelectItem key={segment} value={segment}>
+                            {segment}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="mainGoal">Objetivo Principal</Label>
+                    <Select
+                      value={formData.mainGoal}
+                      onValueChange={(value: ClientGoal) =>
+                        setFormData({ ...formData, mainGoal: value })
+                      }
+                    >
+                      <SelectTrigger className="bg-sidebar-accent/50 border-white/10">
+                        <SelectValue placeholder="Selecione o objetivo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(CLIENT_GOALS).map(([key, label]) => (
+                          <SelectItem key={key} value={key}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="targetAudience">Público-Alvo</Label>
+                  <Input
+                    id="targetAudience"
+                    name="targetAudience"
+                    placeholder="Ex: Mulheres, 25-45 anos, classe B/C"
+                    value={formData.targetAudience}
+                    onChange={handleInputChange}
+                    className="bg-sidebar-accent/50 border-white/10"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Avaliação Geral</Label>
+                    <span className="text-sm font-medium text-primary flex items-center gap-1">
+                      <Star className="h-4 w-4 fill-primary" />
+                      {formData.overallScore}/10
+                    </span>
+                  </div>
+                  <Slider
+                    value={[formData.overallScore]}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, overallScore: value[0] })
+                    }
+                    min={1}
+                    max={10}
+                    step={1}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Baixo</span>
+                    <span>Alto</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="analysisNotes">Observações da Análise</Label>
+                  <Textarea
+                    id="analysisNotes"
+                    name="analysisNotes"
+                    placeholder="Anote detalhes importantes sobre o perfil do cliente..."
+                    value={formData.analysisNotes}
+                    onChange={handleInputChange}
+                    className="bg-sidebar-accent/50 border-white/10 min-h-[80px] resize-none"
+                  />
+                </div>
+              </div>
             </div>
 
             <DialogFooter>
@@ -1135,6 +1303,108 @@ export default function Clientes() {
                       className="bg-sidebar-accent/50 border-white/10"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Análise de Perfil */}
+              <div className="space-y-4 pt-4 border-t border-sidebar-border">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                  Análise de Perfil
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-segment">Segmento de Mercado</Label>
+                    <Select
+                      value={formData.segment}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, segment: value })
+                      }
+                    >
+                      <SelectTrigger className="bg-sidebar-accent/50 border-white/10">
+                        <SelectValue placeholder="Selecione o segmento" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CLIENT_SEGMENTS.map((segment) => (
+                          <SelectItem key={segment} value={segment}>
+                            {segment}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-mainGoal">Objetivo Principal</Label>
+                    <Select
+                      value={formData.mainGoal}
+                      onValueChange={(value: ClientGoal) =>
+                        setFormData({ ...formData, mainGoal: value })
+                      }
+                    >
+                      <SelectTrigger className="bg-sidebar-accent/50 border-white/10">
+                        <SelectValue placeholder="Selecione o objetivo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(CLIENT_GOALS).map(([key, label]) => (
+                          <SelectItem key={key} value={key}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-targetAudience">Público-Alvo</Label>
+                  <Input
+                    id="edit-targetAudience"
+                    name="targetAudience"
+                    placeholder="Ex: Mulheres, 25-45 anos, classe B/C"
+                    value={formData.targetAudience}
+                    onChange={handleInputChange}
+                    className="bg-sidebar-accent/50 border-white/10"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Avaliação Geral</Label>
+                    <span className="text-sm font-medium text-primary flex items-center gap-1">
+                      <Star className="h-4 w-4 fill-primary" />
+                      {formData.overallScore}/10
+                    </span>
+                  </div>
+                  <Slider
+                    value={[formData.overallScore]}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, overallScore: value[0] })
+                    }
+                    min={1}
+                    max={10}
+                    step={1}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Baixo</span>
+                    <span>Alto</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-analysisNotes">
+                    Observações da Análise
+                  </Label>
+                  <Textarea
+                    id="edit-analysisNotes"
+                    name="analysisNotes"
+                    placeholder="Anote detalhes importantes sobre o perfil do cliente..."
+                    value={formData.analysisNotes}
+                    onChange={handleInputChange}
+                    className="bg-sidebar-accent/50 border-white/10 min-h-[80px] resize-none"
+                  />
                 </div>
               </div>
 

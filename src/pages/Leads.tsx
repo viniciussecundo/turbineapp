@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   Plus,
   Search,
@@ -14,6 +14,17 @@ import {
   CheckCircle,
   Trash2,
   AlertTriangle,
+  UserCheck,
+  Link2,
+  ChevronDown,
+  ChevronRight,
+  Building2,
+  DollarSign,
+  Calendar,
+  MessageSquare,
+  TrendingUp,
+  Image,
+  Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -94,6 +105,7 @@ export default function Leads() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<LeadStatus | "all">("all");
+  const [expandedLeadId, setExpandedLeadId] = useState<number | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isConvertDialogOpen, setIsConvertDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -107,6 +119,9 @@ export default function Leads() {
     origin: "site" as LeadOrigin,
     value: "",
     notes: "",
+    followers: "",
+    posts: "",
+    monthlyBudget: "",
   });
   const [convertFormData, setConvertFormData] = useState({
     responsible: "",
@@ -144,6 +159,11 @@ export default function Leads() {
       origin: formData.origin,
       value: formData.value ? parseFloat(formData.value) : undefined,
       notes: formData.notes || undefined,
+      followers: formData.followers ? parseInt(formData.followers) : undefined,
+      posts: formData.posts ? parseInt(formData.posts) : undefined,
+      monthlyBudget: formData.monthlyBudget
+        ? parseFloat(formData.monthlyBudget)
+        : undefined,
     });
 
     setIsDialogOpen(false);
@@ -155,6 +175,9 @@ export default function Leads() {
       origin: "site",
       value: "",
       notes: "",
+      followers: "",
+      posts: "",
+      monthlyBudget: "",
     });
   };
 
@@ -225,13 +248,27 @@ export default function Leads() {
             Gerencie seu funil de vendas e acompanhe seus leads
           </p>
         </div>
-        <Button
-          className="gradient-primary text-white shadow-lg glow-primary"
-          onClick={() => setIsDialogOpen(true)}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Novo Lead
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
+            onClick={() => {
+              const url = `${window.location.origin}/cadastro`;
+              navigator.clipboard.writeText(url);
+              alert("Link copiado! Compartilhe com seus clientes:\n" + url);
+            }}
+          >
+            <Link2 className="mr-2 h-4 w-4" />
+            Link Compartilhável
+          </Button>
+          <Button
+            className="gradient-primary text-white shadow-lg glow-primary"
+            onClick={() => setIsDialogOpen(true)}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Lead
+          </Button>
+        </div>
       </div>
 
       {/* Funil Visual */}
@@ -276,6 +313,17 @@ export default function Leads() {
               <p className="text-sm text-muted-foreground">Total de Leads</p>
               <p className="text-xl font-bold text-foreground">
                 {leads.length}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+              <UserCheck className="h-5 w-5 text-cyan-400" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Auto-cadastros</p>
+              <p className="text-xl font-bold text-foreground">
+                {leads.filter((l) => l.selfRegistered).length}
               </p>
             </div>
           </div>
@@ -367,140 +415,275 @@ export default function Leads() {
                 const OriginIcon = origin.icon;
                 const isConverted = !!lead.convertedToClientId;
                 const linkedClient = getClientByLeadId(lead.id);
+                const isExpanded = expandedLeadId === lead.id;
 
                 return (
-                  <tr
-                    key={lead.id}
-                    className="border-b border-sidebar-border/50 hover:bg-sidebar-accent/30 transition-colors"
-                  >
-                    <td className="py-4 px-4">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10 border border-white/10">
-                          <AvatarFallback className="bg-primary/20 text-primary text-sm">
-                            {lead.name.substring(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium text-foreground">
-                              {lead.name}
-                            </p>
-                            {isConverted && (
-                              <Badge
-                                variant="outline"
-                                className="text-xs bg-success/10 text-success border-success/30"
-                              >
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Cliente
-                              </Badge>
+                  <React.Fragment key={lead.id}>
+                    <tr
+                      className={`border-b border-sidebar-border/50 hover:bg-sidebar-accent/30 transition-colors cursor-pointer ${isExpanded ? "bg-sidebar-accent/20" : ""}`}
+                      onClick={() =>
+                        setExpandedLeadId(isExpanded ? null : lead.id)
+                      }
+                    >
+                      <td className="py-4 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="text-muted-foreground">
+                            {isExpanded ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
                             )}
                           </div>
-                          <p className="text-xs text-muted-foreground">
-                            {lead.company || lead.email}
-                          </p>
+                          <Avatar className="h-10 w-10 border border-white/10">
+                            <AvatarFallback className="bg-primary/20 text-primary text-sm">
+                              {lead.name.substring(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-foreground">
+                                {lead.name}
+                              </p>
+                              {lead.selfRegistered && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs bg-cyan-500/10 text-cyan-400 border-cyan-500/30"
+                                >
+                                  <UserCheck className="h-3 w-3 mr-1" />
+                                  Auto
+                                </Badge>
+                              )}
+                              {isConverted && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs bg-success/10 text-success border-success/30"
+                                >
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Cliente
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {lead.company || lead.email}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="py-4 px-4 hidden md:table-cell">
-                      <div className="space-y-1">
+                      </td>
+                      <td className="py-4 px-4 hidden md:table-cell">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Mail className="h-3 w-3" />
+                            {lead.email}
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Phone className="h-3 w-3" />
+                            {lead.phone}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Mail className="h-3 w-3" />
-                          {lead.email}
+                          <OriginIcon className="h-4 w-4" />
+                          <span className="hidden sm:inline">
+                            {origin.label}
+                          </span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Phone className="h-3 w-3" />
-                          {lead.phone}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <OriginIcon className="h-4 w-4" />
-                        <span className="hidden sm:inline">{origin.label}</span>
-                      </div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <Select
-                        value={lead.status}
-                        onValueChange={(value) =>
-                          updateLeadStatus(lead.id, value as LeadStatus)
-                        }
-                        disabled={isConverted}
+                      </td>
+                      <td
+                        className="py-4 px-4"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <SelectTrigger className="w-[130px] h-8 border-0 bg-transparent p-0">
-                          <Badge variant="outline" className={status.className}>
-                            {status.label}
-                          </Badge>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="novo">Novo</SelectItem>
-                          <SelectItem value="contato">Contato</SelectItem>
-                          <SelectItem value="proposta">Proposta</SelectItem>
-                          <SelectItem value="fechado">Fechado</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </td>
-                    <td className="py-4 px-4 text-right hidden sm:table-cell">
-                      <span className="font-medium text-foreground">
-                        {lead.value
-                          ? `R$ ${lead.value.toLocaleString("pt-BR")}`
-                          : "-"}
-                      </span>
-                    </td>
-                    <td className="py-4 px-4">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {!isConverted && (
-                            <>
-                              <DropdownMenuItem
-                                onClick={() => handleOpenConvertDialog(lead)}
-                              >
-                                <UserPlus className="h-4 w-4 mr-2" />
-                                Converter em Cliente
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                            </>
-                          )}
-                          {isConverted && linkedClient && (
-                            <>
-                              <DropdownMenuItem
-                                onClick={() => navigate("/clientes")}
-                              >
-                                <Users className="h-4 w-4 mr-2" />
-                                Ver Cliente
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                            </>
-                          )}
-                          <DropdownMenuItem>
-                            <Mail className="h-4 w-4 mr-2" />
-                            Enviar E-mail
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Phone className="h-4 w-4 mr-2" />
-                            Ligar
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-red-400"
-                            onClick={() => handleDeleteClick(lead)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Excluir Lead
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  </tr>
+                        <Select
+                          value={lead.status}
+                          onValueChange={(value) =>
+                            updateLeadStatus(lead.id, value as LeadStatus)
+                          }
+                          disabled={isConverted}
+                        >
+                          <SelectTrigger className="w-[130px] h-8 border-0 bg-transparent p-0">
+                            <Badge
+                              variant="outline"
+                              className={status.className}
+                            >
+                              {status.label}
+                            </Badge>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="novo">Novo</SelectItem>
+                            <SelectItem value="contato">Contato</SelectItem>
+                            <SelectItem value="proposta">Proposta</SelectItem>
+                            <SelectItem value="fechado">Fechado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      <td className="py-4 px-4 text-right hidden sm:table-cell">
+                        <span className="font-medium text-foreground">
+                          {lead.value
+                            ? `R$ ${lead.value.toLocaleString("pt-BR")}`
+                            : "-"}
+                        </span>
+                      </td>
+                      <td
+                        className="py-4 px-4"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {!isConverted && (
+                              <>
+                                <DropdownMenuItem
+                                  onClick={() => handleOpenConvertDialog(lead)}
+                                >
+                                  <UserPlus className="h-4 w-4 mr-2" />
+                                  Converter em Cliente
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                              </>
+                            )}
+                            {isConverted && linkedClient && (
+                              <>
+                                <DropdownMenuItem
+                                  onClick={() => navigate("/clientes")}
+                                >
+                                  <Users className="h-4 w-4 mr-2" />
+                                  Ver Cliente
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                              </>
+                            )}
+                            <DropdownMenuItem>
+                              <Mail className="h-4 w-4 mr-2" />
+                              Enviar E-mail
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Phone className="h-4 w-4 mr-2" />
+                              Ligar
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-red-400"
+                              onClick={() => handleDeleteClick(lead)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Excluir Lead
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+
+                    {/* Linha Expandida */}
+                    {isExpanded && (
+                      <tr className="bg-sidebar-accent/10">
+                        <td colSpan={6} className="px-4 py-4">
+                          <div className="ml-7 grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {/* Dados de Tráfego */}
+                            <div className="space-y-3">
+                              <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                <TrendingUp className="h-4 w-4 text-primary" />
+                                Dados de Tráfego
+                              </h4>
+                              <div className="space-y-2 text-sm">
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <Users className="h-3 w-3" />
+                                  Seguidores:{" "}
+                                  <span className="text-foreground font-medium">
+                                    {lead.followers
+                                      ? lead.followers.toLocaleString("pt-BR")
+                                      : "Não informado"}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <Image className="h-3 w-3" />
+                                  Posts:{" "}
+                                  <span className="text-foreground font-medium">
+                                    {lead.posts
+                                      ? lead.posts.toLocaleString("pt-BR")
+                                      : "Não informado"}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <Wallet className="h-3 w-3" />
+                                  Orçamento/Mês:{" "}
+                                  <span className="text-foreground font-medium">
+                                    {lead.monthlyBudget
+                                      ? `R$ ${lead.monthlyBudget.toLocaleString("pt-BR")}`
+                                      : "Não informado"}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Observações */}
+                            <div className="space-y-3">
+                              <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                <MessageSquare className="h-4 w-4 text-primary" />
+                                Observações
+                              </h4>
+                              <div className="text-sm">
+                                {lead.notes ? (
+                                  <p className="text-muted-foreground bg-sidebar-accent/30 p-3 rounded-lg">
+                                    {lead.notes}
+                                  </p>
+                                ) : (
+                                  <p className="text-muted-foreground/60 italic">
+                                    Nenhuma observação registrada
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Status / Conversão */}
+                            <div className="space-y-3">
+                              <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                <Calendar className="h-4 w-4 text-primary" />
+                                Informações
+                              </h4>
+                              <div className="space-y-2 text-sm">
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <Calendar className="h-3 w-3" />
+                                  Criado em:{" "}
+                                  <span className="text-foreground">
+                                    {new Date(
+                                      lead.createdAt,
+                                    ).toLocaleDateString("pt-BR")}
+                                  </span>
+                                </div>
+                                {isConverted && linkedClient && (
+                                  <div className="mt-3 flex items-center gap-2">
+                                    <Badge className="bg-success/20 text-success border-success/30">
+                                      <CheckCircle className="h-3 w-3 mr-1" />
+                                      Convertido em Cliente
+                                    </Badge>
+                                    <Button
+                                      variant="link"
+                                      size="sm"
+                                      className="text-primary p-0 h-auto"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate("/clientes");
+                                      }}
+                                    >
+                                      Ver cliente →
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 );
               })}
             </tbody>
@@ -615,6 +798,53 @@ export default function Leads() {
                     onChange={handleInputChange}
                     className="bg-sidebar-accent/50 border-white/10"
                   />
+                </div>
+              </div>
+
+              {/* Dados para Gestão de Tráfego */}
+              <div className="border-t border-white/10 pt-4 mt-4">
+                <p className="text-sm font-medium text-muted-foreground mb-3">
+                  Dados para Gestão de Tráfego
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="followers">Seguidores</Label>
+                    <Input
+                      id="followers"
+                      name="followers"
+                      type="number"
+                      placeholder="Ex: 5000"
+                      value={formData.followers}
+                      onChange={handleInputChange}
+                      className="bg-sidebar-accent/50 border-white/10"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="posts">Nº de Posts</Label>
+                    <Input
+                      id="posts"
+                      name="posts"
+                      type="number"
+                      placeholder="Ex: 120"
+                      value={formData.posts}
+                      onChange={handleInputChange}
+                      className="bg-sidebar-accent/50 border-white/10"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="monthlyBudget">Orçamento/Mês</Label>
+                    <Input
+                      id="monthlyBudget"
+                      name="monthlyBudget"
+                      type="number"
+                      placeholder="R$ 0,00"
+                      value={formData.monthlyBudget}
+                      onChange={handleInputChange}
+                      className="bg-sidebar-accent/50 border-white/10"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
