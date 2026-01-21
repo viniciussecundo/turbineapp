@@ -1105,7 +1105,7 @@ export default function Clientes() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="analysisNotes">Observações da Análise</Label>
+                  <Label htmlFor="analysisNotes">Análise do Cliente</Label>
                   <Textarea
                     id="analysisNotes"
                     name="analysisNotes"
@@ -1394,9 +1394,7 @@ export default function Clientes() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="edit-analysisNotes">
-                    Observações da Análise
-                  </Label>
+                  <Label htmlFor="edit-analysisNotes">Análise do Cliente</Label>
                   <Textarea
                     id="edit-analysisNotes"
                     name="analysisNotes"
