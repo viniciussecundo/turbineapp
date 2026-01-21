@@ -23,6 +23,13 @@ import {
   Star,
   UserCircle,
   FileText,
+  TrendingUp,
+  Image,
+  Wallet,
+  MessageSquare,
+  Calendar,
+  FileDown,
+  Printer,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,6 +69,10 @@ import {
   CLIENT_SEGMENTS,
 } from "@/contexts/DataContext";
 import { useNavigate } from "react-router-dom";
+import {
+  generateClientPDF,
+  generateBatchClientPDF,
+} from "@/lib/generateClientPDF";
 
 const statusConfig: Record<ClientStatus, { label: string; className: string }> =
   {
@@ -296,13 +307,31 @@ export default function Clientes() {
             Gerencie seus clientes e contratos
           </p>
         </div>
-        <Button
-          className="gradient-primary text-white shadow-lg glow-primary"
-          onClick={() => setIsDialogOpen(true)}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Novo Cliente
-        </Button>
+        <div className="flex gap-2">
+          {filteredClients.length > 0 && (
+            <Button
+              variant="outline"
+              className="border-primary/30 text-primary hover:bg-primary/10"
+              onClick={() => {
+                const clientsWithLeads = filteredClients.map((client) => ({
+                  client,
+                  lead: client.leadId ? getLeadByClientId(client.id) : null,
+                }));
+                generateBatchClientPDF(clientsWithLeads);
+              }}
+            >
+              <Printer className="mr-2 h-4 w-4" />
+              Exportar PDFs ({filteredClients.length})
+            </Button>
+          )}
+          <Button
+            className="gradient-primary text-white shadow-lg glow-primary"
+            onClick={() => setIsDialogOpen(true)}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Cliente
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -594,6 +623,14 @@ export default function Clientes() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
+                              onClick={() =>
+                                generateClientPDF({ client, lead })
+                              }
+                            >
+                              <FileDown className="h-4 w-4 mr-2" />
+                              Gerar PDF
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
                               onClick={() => handleEditClick(client)}
                             >
                               <Pencil className="h-4 w-4 mr-2" />
@@ -625,7 +662,7 @@ export default function Clientes() {
                       <tr className="bg-sidebar-accent/10">
                         <td colSpan={7} className="px-4 py-0">
                           <div className="py-4 pl-12 animate-in slide-in-from-top-2 duration-200">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                               {/* Coluna 1 - Redes Sociais */}
                               <div className="space-y-3">
                                 <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -756,7 +793,78 @@ export default function Clientes() {
                                 )}
                               </div>
 
-                              {/* Coluna 3 - Origem / Lead */}
+                              {/* Coluna 3 - Dados do Lead (se vier de Lead) */}
+                              {client.leadId && lead ? (
+                                <div className="space-y-3">
+                                  <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                    <TrendingUp className="h-4 w-4 text-primary" />
+                                    Dados do Lead
+                                  </h4>
+                                  <div className="space-y-2 text-sm">
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                      <Users className="h-3 w-3" />
+                                      Seguidores:{" "}
+                                      <span className="text-foreground font-medium">
+                                        {lead.followers
+                                          ? lead.followers.toLocaleString(
+                                              "pt-BR",
+                                            )
+                                          : "Não informado"}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                      <Image className="h-3 w-3" />
+                                      Posts:{" "}
+                                      <span className="text-foreground font-medium">
+                                        {lead.posts
+                                          ? lead.posts.toLocaleString("pt-BR")
+                                          : "Não informado"}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                      <Wallet className="h-3 w-3" />
+                                      Orçamento/Mês:{" "}
+                                      <span className="text-foreground font-medium">
+                                        {lead.monthlyBudget
+                                          ? `R$ ${lead.monthlyBudget.toLocaleString("pt-BR")}`
+                                          : "Não informado"}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                      <DollarSign className="h-3 w-3" />
+                                      Valor Estimado:{" "}
+                                      <span className="text-foreground font-medium">
+                                        {lead.value
+                                          ? `R$ ${lead.value.toLocaleString("pt-BR")}`
+                                          : "Não informado"}
+                                      </span>
+                                    </div>
+                                    {lead.notes && (
+                                      <div className="mt-2">
+                                        <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                                          <MessageSquare className="h-3 w-3" />
+                                          Observações:
+                                        </div>
+                                        <p className="text-xs text-muted-foreground bg-sidebar-accent/30 p-2 rounded">
+                                          {lead.notes}
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="space-y-3">
+                                  <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                    <TrendingUp className="h-4 w-4 text-primary" />
+                                    Dados de Tráfego
+                                  </h4>
+                                  <div className="text-sm text-muted-foreground/60 italic">
+                                    Não há dados de lead vinculados
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Coluna 4 - Origem / Lead */}
                               <div className="space-y-3">
                                 <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
                                   <Building2 className="h-4 w-4 text-primary" />
@@ -776,14 +884,18 @@ export default function Clientes() {
                                         {originLabels[lead.origin] ||
                                           lead.origin}
                                       </p>
-                                      <p>
+                                      <p className="flex items-center gap-1">
+                                        <Calendar className="h-3 w-3" />
                                         Data:{" "}
                                         {new Date(
                                           lead.createdAt,
                                         ).toLocaleDateString("pt-BR")}
                                       </p>
                                       {lead.company && (
-                                        <p>Empresa: {lead.company}</p>
+                                        <p className="flex items-center gap-1">
+                                          <Building2 className="h-3 w-3" />
+                                          Empresa: {lead.company}
+                                        </p>
                                       )}
                                     </div>
                                     <Button
@@ -812,7 +924,19 @@ export default function Clientes() {
                             </div>
 
                             {/* Ações */}
-                            <div className="flex gap-2 mt-4 pt-4 border-t border-sidebar-border/50">
+                            <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-sidebar-border/50">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-primary border-primary/30 hover:bg-primary/10"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  generateClientPDF({ client, lead });
+                                }}
+                              >
+                                <FileDown className="h-3 w-3 mr-2" />
+                                Gerar PDF
+                              </Button>
                               <Button
                                 size="sm"
                                 variant="outline"
