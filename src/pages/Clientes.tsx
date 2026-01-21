@@ -385,7 +385,11 @@ export default function Clientes() {
             </div>
             <div>
               <p className="text-2xl font-bold text-foreground">
-                R$ {(stats.totalValue / 1000).toFixed(0)}k
+                R${" "}
+                {stats.totalValue.toLocaleString("pt-BR", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
               </p>
               <p className="text-xs text-muted-foreground">Valor Total</p>
             </div>

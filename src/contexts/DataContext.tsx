@@ -73,6 +73,64 @@ export interface ProfileAnalysis {
 }
 // ========================================
 
+// ========================================
+// FINANÇAS
+// ========================================
+export type TransactionType = "income" | "expense";
+export type TransactionStatus = "pending" | "completed";
+
+// Categorias de despesas da empresa
+export const EXPENSE_CATEGORIES = [
+  "Salários",
+  "Ferramentas/Software",
+  "Marketing",
+  "Infraestrutura",
+  "Impostos",
+  "Serviços",
+  "Outros",
+] as const;
+
+// Categorias de receitas
+export const INCOME_CATEGORIES = [
+  "Serviço de Cliente",
+  "Gestão de Tráfego",
+  "Consultoria",
+  "Projeto Avulso",
+  "Outros",
+] as const;
+
+// Transação geral da empresa (entrada/saída)
+export interface Transaction {
+  id: number;
+  type: TransactionType;
+  description: string;
+  value: number;
+  date: string;
+  category: string;
+  status: TransactionStatus;
+  clientId?: number; // Vinculado a um cliente (opcional)
+  notes?: string;
+}
+
+// Movimentação na carteira virtual do cliente
+export interface WalletMovement {
+  id: number;
+  type: "deposit" | "withdrawal"; // depósito ou saque/gasto
+  value: number;
+  date: string;
+  description: string;
+}
+
+// Carteira virtual por cliente (para gestão de tráfego)
+export interface ClientWallet {
+  id: number;
+  clientId: number; // Vinculado ao cliente
+  balance: number; // Saldo atual
+  movements: WalletMovement[]; // Histórico de movimentações
+  createdAt: string;
+}
+// ========================================
+
 export interface Client {
   id: number;
   name: string;
@@ -94,148 +152,16 @@ export interface Client {
   profileAnalysis?: ProfileAnalysis; // Análise do perfil
 }
 
-// Initial Data
-const initialLeads: Lead[] = [
-  {
-    id: 1,
-    name: "Carlos Mendes",
-    email: "carlos@empresa.com",
-    phone: "(11) 99999-1111",
-    company: "Empresa ABC",
-    status: "novo",
-    origin: "site",
-    value: 15000,
-    createdAt: "2026-01-15",
-  },
-  {
-    id: 2,
-    name: "Ana Paula Silva",
-    email: "ana.paula@gmail.com",
-    phone: "(21) 98888-2222",
-    company: "Studio Design",
-    status: "contato",
-    origin: "instagram",
-    value: 8500,
-    createdAt: "2026-01-14",
-  },
-  {
-    id: 3,
-    name: "Roberto Lima",
-    email: "roberto@techcorp.com",
-    phone: "(31) 97777-3333",
-    company: "TechCorp",
-    status: "proposta",
-    origin: "indicacao",
-    value: 32000,
-    createdAt: "2026-01-12",
-  },
-  {
-    id: 4,
-    name: "Mariana Costa",
-    email: "mariana@startup.io",
-    phone: "(41) 96666-4444",
-    company: "Startup.io",
-    status: "fechado",
-    origin: "google",
-    value: 25000,
-    createdAt: "2026-01-10",
-    convertedToClientId: 6,
-  },
-  {
-    id: 5,
-    name: "Fernando Oliveira",
-    email: "fernando@oliveira.com",
-    phone: "(51) 95555-5555",
-    status: "novo",
-    origin: "facebook",
-    value: 12000,
-    createdAt: "2026-01-16",
-  },
-  {
-    id: 6,
-    name: "Juliana Martins",
-    email: "juliana@agencia.com",
-    phone: "(11) 94444-6666",
-    company: "Agência Digital",
-    status: "contato",
-    origin: "site",
-    value: 18000,
-    createdAt: "2026-01-13",
-  },
-];
+// Initial Data - Arrays vazios para começar do zero
+const initialLeads: Lead[] = [];
 
-const initialClients: Client[] = [
-  {
-    id: 1,
-    name: "Tech Solutions Ltda",
-    email: "contato@techsolutions.com.br",
-    phone: "(11) 99999-1234",
-    status: "active",
-    projects: 5,
-    value: 75000,
-    avatar:
-      "https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=100&h=100&fit=crop",
-    responsible: "João Silva",
-  },
-  {
-    id: 2,
-    name: "Marketing Digital Pro",
-    email: "admin@mdpro.com",
-    phone: "(21) 98888-5678",
-    status: "active",
-    projects: 3,
-    value: 42000,
-    avatar:
-      "https://images.unsplash.com/photo-1549923746-c502d488b3ea?w=100&h=100&fit=crop",
-    responsible: "Maria Santos",
-  },
-  {
-    id: 3,
-    name: "E-commerce Master",
-    email: "suporte@emaster.com.br",
-    phone: "(31) 97777-9012",
-    status: "pending",
-    projects: 2,
-    value: 28000,
-    avatar: "",
-    responsible: "Pedro Costa",
-  },
-  {
-    id: 4,
-    name: "Startup Innovation",
-    email: "hello@startupinno.io",
-    phone: "(41) 96666-3456",
-    status: "inactive",
-    projects: 1,
-    value: 15000,
-    avatar:
-      "https://images.unsplash.com/photo-1552664730-d307ca884978?w=100&h=100&fit=crop",
-  },
-  {
-    id: 5,
-    name: "Digital Agency Co",
-    email: "contact@dagency.com",
-    phone: "(51) 95555-7890",
-    status: "active",
-    projects: 8,
-    value: 120000,
-    avatar: "",
-    responsible: "Ana Lima",
-  },
-  {
-    id: 6,
-    name: "Startup.io",
-    email: "mariana@startup.io",
-    phone: "(41) 96666-4444",
-    status: "active",
-    projects: 1,
-    value: 25000,
-    avatar: "",
-    responsible: "Mariana Costa",
-    leadId: 4,
-    origin: "google",
-  },
-];
+const initialClients: Client[] = [];
+
+// Transações iniciais - vazio para começar do zero
+const initialTransactions: Transaction[] = [];
+
+// Carteiras virtuais iniciais - vazio para começar do zero
+const initialWallets: ClientWallet[] = [];
 
 // Context Interface
 interface DataContextType {
@@ -258,6 +184,34 @@ interface DataContextType {
   updateClient: (clientId: number, data: Partial<Client>) => void;
   deleteClient: (clientId: number) => boolean;
 
+  // Finanças - Transações
+  transactions: Transaction[];
+  addTransaction: (transaction: Omit<Transaction, "id">) => void;
+  updateTransaction: (
+    transactionId: number,
+    data: Partial<Transaction>,
+  ) => void;
+  deleteTransaction: (transactionId: number) => boolean;
+
+  // Finanças - Carteira Virtual
+  wallets: ClientWallet[];
+  getWalletByClientId: (clientId: number) => ClientWallet | undefined;
+  createWallet: (
+    clientId: number,
+    initialDeposit?: number,
+    initialMovement?: Omit<WalletMovement, "id">,
+  ) => ClientWallet;
+  addWalletMovement: (
+    walletId: number,
+    movement: Omit<WalletMovement, "id">,
+  ) => void;
+
+  // Finanças - Cálculos
+  getTotalIncome: () => number;
+  getTotalExpenses: () => number;
+  getBalance: () => number;
+  getClientTransactions: (clientId: number) => Transaction[];
+
   // Utils
   getLeadByClientId: (clientId: number) => Lead | undefined;
   getClientByLeadId: (leadId: number) => Client | undefined;
@@ -268,6 +222,8 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 // LocalStorage keys
 const LEADS_STORAGE_KEY = "turbine_leads";
 const CLIENTS_STORAGE_KEY = "turbine_clients";
+const TRANSACTIONS_STORAGE_KEY = "turbine_transactions";
+const WALLETS_STORAGE_KEY = "turbine_wallets";
 
 // Helper functions para LocalStorage
 const loadFromStorage = <T,>(key: string, fallback: T): T => {
@@ -294,6 +250,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [clients, setClients] = useState<Client[]>(() =>
     loadFromStorage(CLIENTS_STORAGE_KEY, initialClients),
   );
+  const [transactions, setTransactions] = useState<Transaction[]>(() =>
+    loadFromStorage(TRANSACTIONS_STORAGE_KEY, initialTransactions),
+  );
+  const [wallets, setWallets] = useState<ClientWallet[]>(() =>
+    loadFromStorage(WALLETS_STORAGE_KEY, initialWallets),
+  );
 
   // Salvar no LocalStorage quando os dados mudarem
   useEffect(() => {
@@ -304,6 +266,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
     saveToStorage(CLIENTS_STORAGE_KEY, clients);
   }, [clients]);
 
+  useEffect(() => {
+    saveToStorage(TRANSACTIONS_STORAGE_KEY, transactions);
+  }, [transactions]);
+
+  useEffect(() => {
+    saveToStorage(WALLETS_STORAGE_KEY, wallets);
+  }, [wallets]);
+
   // Lead Functions
   const addLead = (
     leadData: Omit<Lead, "id" | "createdAt" | "status">,
@@ -311,7 +281,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   ) => {
     const newLead: Lead = {
       ...leadData,
-      id: Math.max(...leads.map((l) => l.id), 0) + 1,
+      id: leads.length > 0 ? Math.max(...leads.map((l) => l.id)) + 1 : 1,
       status: "novo",
       createdAt: new Date().toISOString().split("T")[0],
       selfRegistered,
@@ -356,7 +326,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return clients.find((c) => c.id === lead.convertedToClientId) || null;
     }
 
-    const newClientId = Math.max(...clients.map((c) => c.id), 0) + 1;
+    const newClientId =
+      clients.length > 0 ? Math.max(...clients.map((c) => c.id)) + 1 : 1;
 
     const newClient: Client = {
       id: newClientId,
@@ -395,7 +366,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const addClient = (clientData: Omit<Client, "id">) => {
     const newClient: Client = {
       ...clientData,
-      id: Math.max(...clients.map((c) => c.id), 0) + 1,
+      id: clients.length > 0 ? Math.max(...clients.map((c) => c.id)) + 1 : 1,
     };
     setClients([...clients, newClient]);
   };
@@ -438,6 +409,135 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return clients.find((c) => c.leadId === leadId);
   };
 
+  // ========================================
+  // FUNÇÕES DE FINANÇAS
+  // ========================================
+
+  // Transações
+  const addTransaction = (transactionData: Omit<Transaction, "id">) => {
+    const newTransaction: Transaction = {
+      ...transactionData,
+      id:
+        transactions.length > 0
+          ? Math.max(...transactions.map((t) => t.id)) + 1
+          : 1,
+    };
+    setTransactions([newTransaction, ...transactions]);
+  };
+
+  const updateTransaction = (
+    transactionId: number,
+    data: Partial<Transaction>,
+  ) => {
+    setTransactions(
+      transactions.map((t) => (t.id === transactionId ? { ...t, ...data } : t)),
+    );
+  };
+
+  const deleteTransaction = (transactionId: number): boolean => {
+    const exists = transactions.find((t) => t.id === transactionId);
+    if (!exists) return false;
+    setTransactions(transactions.filter((t) => t.id !== transactionId));
+    return true;
+  };
+
+  // Carteira Virtual
+  const getWalletByClientId = (clientId: number): ClientWallet | undefined => {
+    return wallets.find((w) => w.clientId === clientId);
+  };
+
+  const createWallet = (
+    clientId: number,
+    initialDeposit: number = 0,
+    initialMovement?: Omit<WalletMovement, "id">,
+  ): ClientWallet => {
+    const existingWallet = getWalletByClientId(clientId);
+    if (existingWallet) return existingWallet;
+
+    let movements: WalletMovement[] = [];
+    let balance = 0;
+
+    // Se tem movimento inicial customizado, usar ele
+    if (initialMovement) {
+      movements = [{ ...initialMovement, id: 1 }];
+      balance =
+        initialMovement.type === "deposit"
+          ? initialMovement.value
+          : -initialMovement.value;
+    } else if (initialDeposit > 0) {
+      // Senão, se tem depósito inicial, criar movimento de depósito
+      movements = [
+        {
+          id: 1,
+          type: "deposit",
+          value: initialDeposit,
+          date: new Date().toISOString().split("T")[0],
+          description: "Depósito inicial",
+        },
+      ];
+      balance = initialDeposit;
+    }
+
+    const newWallet: ClientWallet = {
+      id: wallets.length > 0 ? Math.max(...wallets.map((w) => w.id)) + 1 : 1,
+      clientId,
+      balance,
+      createdAt: new Date().toISOString().split("T")[0],
+      movements,
+    };
+    setWallets([...wallets, newWallet]);
+    return newWallet;
+  };
+
+  const addWalletMovement = (
+    walletId: number,
+    movement: Omit<WalletMovement, "id">,
+  ) => {
+    setWallets(
+      wallets.map((wallet) => {
+        if (wallet.id !== walletId) return wallet;
+
+        const newMovementId =
+          wallet.movements.length > 0
+            ? Math.max(...wallet.movements.map((m) => m.id)) + 1
+            : 1;
+        const newMovement: WalletMovement = { ...movement, id: newMovementId };
+
+        const newBalance =
+          movement.type === "deposit"
+            ? wallet.balance + movement.value
+            : wallet.balance - movement.value;
+
+        return {
+          ...wallet,
+          balance: newBalance,
+          movements: [newMovement, ...wallet.movements],
+        };
+      }),
+    );
+  };
+
+  // Cálculos financeiros
+  const getTotalIncome = (): number => {
+    return transactions
+      .filter((t) => t.type === "income" && t.status === "completed")
+      .reduce((sum, t) => sum + t.value, 0);
+  };
+
+  const getTotalExpenses = (): number => {
+    return transactions
+      .filter((t) => t.type === "expense" && t.status === "completed")
+      .reduce((sum, t) => sum + t.value, 0);
+  };
+
+  const getBalance = (): number => {
+    return getTotalIncome() - getTotalExpenses();
+  };
+
+  const getClientTransactions = (clientId: number): Transaction[] => {
+    return transactions.filter((t) => t.clientId === clientId);
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -450,6 +550,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
         addClient,
         updateClient,
         deleteClient,
+        transactions,
+        addTransaction,
+        updateTransaction,
+        deleteTransaction,
+        wallets,
+        getWalletByClientId,
+        createWallet,
+        addWalletMovement,
+        getTotalIncome,
+        getTotalExpenses,
+        getBalance,
+        getClientTransactions,
         getLeadByClientId,
         getClientByLeadId,
       }}
