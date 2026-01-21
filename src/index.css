@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -51,9 +49,21 @@
     --sidebar-border: 217 33% 15%;
     --sidebar-ring: 262 83% 58%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(262, 83%, 58%) 0%, hsl(280, 70%, 50%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(180, 70%, 50%) 0%, hsl(262, 83%, 58%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(222, 47%, 10%) 0%, hsl(222, 47%, 8%) 100%);
+    --gradient-primary: linear-gradient(
+      135deg,
+      hsl(262, 83%, 58%) 0%,
+      hsl(280, 70%, 50%) 100%
+    );
+    --gradient-accent: linear-gradient(
+      135deg,
+      hsl(180, 70%, 50%) 0%,
+      hsl(262, 83%, 58%) 100%
+    );
+    --gradient-card: linear-gradient(
+      180deg,
+      hsl(222, 47%, 10%) 0%,
+      hsl(222, 47%, 8%) 100%
+    );
 
     --shadow-glow: 0 0 40px -10px hsl(262, 83%, 58%, 0.3);
     --shadow-card: 0 4px 24px -4px hsl(0, 0%, 0%, 0.5);
@@ -72,17 +82,22 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: "Inter", system-ui, sans-serif;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
   }
 }
 
 @layer utilities {
   .font-display {
-    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
   }
 
   .gradient-text {
@@ -146,7 +161,8 @@
   }
 
   @keyframes pulse {
-    0%, 100% {
+    0%,
+    100% {
       opacity: 1;
     }
     50% {
