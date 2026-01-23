@@ -9,6 +9,7 @@ import {
   Plus,
   Wallet,
   Users,
+  Check,
 } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,7 @@ export default function Financas() {
   const {
     transactions,
     addTransaction,
+    updateTransaction,
     clients,
     wallets,
     getWalletByClientId,
@@ -491,27 +493,44 @@ export default function Financas() {
                           )}
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p
-                          className={`text-sm font-semibold ${
-                            tx.type === "income"
-                              ? "text-success"
-                              : "text-destructive"
-                          }`}
-                        >
-                          {tx.type === "income" ? "+" : "-"}
-                          {formatCurrency(tx.value)}
-                        </p>
-                        <Badge
-                          variant="outline"
-                          className={
-                            tx.status === "completed"
-                              ? "border-success/30 text-success"
-                              : "border-warning/30 text-warning"
-                          }
-                        >
-                          {tx.status === "completed" ? "Concluído" : "Pendente"}
-                        </Badge>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <p
+                            className={`text-sm font-semibold ${
+                              tx.type === "income"
+                                ? "text-success"
+                                : "text-destructive"
+                            }`}
+                          >
+                            {tx.type === "income" ? "+" : "-"}
+                            {formatCurrency(tx.value)}
+                          </p>
+                          <Badge
+                            variant="outline"
+                            className={
+                              tx.status === "completed"
+                                ? "border-success/30 text-success"
+                                : "border-warning/30 text-warning"
+                            }
+                          >
+                            {tx.status === "completed"
+                              ? "Concluído"
+                              : "Pendente"}
+                          </Badge>
+                        </div>
+                        {tx.status === "pending" && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-success hover:bg-success/10"
+                            title="Confirmar Pagamento"
+                            onClick={() =>
+                              updateTransaction(tx.id, { status: "completed" })
+                            }
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   );
