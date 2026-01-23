@@ -19,9 +19,9 @@ interface GenerateBudgetPDFOptions {
 export function generateBudgetPDF({
   budget,
   client,
-  companyName = "TurbineApp",
-  companyEmail = "contato@turbineapp.com",
-  companyPhone = "(11) 99999-9999",
+  companyName = "TurbineTech",
+  companyEmail = "agencia.turbinetech@gmail.com",
+  companyPhone = "(21) 96690-1901",
 }: GenerateBudgetPDFOptions): void {
   const doc = new jsPDF({
     orientation: "portrait",

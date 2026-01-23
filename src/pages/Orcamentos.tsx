@@ -14,6 +14,8 @@ import {
   Calendar,
   User,
   DollarSign,
+  TrendingUp,
+  Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +45,7 @@ import {
   BUDGET_STATUS_CONFIG,
 } from "@/contexts/DataContext";
 import { generateBudgetPDF } from "@/lib/generateBudgetPDF";
+import { toast } from "@/hooks/use-toast";
 
 export default function Orcamentos() {
   const {
@@ -52,6 +55,8 @@ export default function Orcamentos() {
     updateBudget,
     deleteBudget,
     updateBudgetStatus,
+    transactions,
+    getWalletByClientId,
   } = useData();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -263,6 +268,25 @@ export default function Orcamentos() {
 
   const handleApproveBudget = (budget: Budget) => {
     updateBudgetStatus(budget.id, "approved");
+    
+    // Verificar se é orçamento de tráfego para mensagem personalizada
+    const isTrafficBudget = 
+      budget.title.toLowerCase().includes("tráfego") ||
+      budget.title.toLowerCase().includes("traffic") ||
+      budget.title.toLowerCase().includes("ads") ||
+      budget.title.toLowerCase().includes("meta") ||
+      budget.title.toLowerCase().includes("google") ||
+      budget.description?.toLowerCase().includes("tráfego") ||
+      budget.description?.toLowerCase().includes("gestão de tráfego");
+    
+    const client = clients.find(c => c.id === budget.clientId);
+    
+    toast({
+      title: "✅ Orçamento Aprovado!",
+      description: isTrafficBudget 
+        ? `Receita de R$ ${budget.totalValue.toLocaleString("pt-BR")} criada e cartão virtual de ${client?.name || "cliente"} atualizado.`
+        : `Receita de R$ ${budget.totalValue.toLocaleString("pt-BR")} criada automaticamente.`,
+    });
   };
 
   const handleRejectBudget = (budget: Budget) => {
@@ -1099,6 +1123,90 @@ export default function Orcamentos() {
                   <p className="text-sm text-muted-foreground">
                     {selectedBudget.notes}
                   </p>
+                </div>
+              )}
+
+              {/* Informações Financeiras (quando aprovado) */}
+              {selectedBudget.status === "approved" && (
+                <div className="border-t border-sidebar-border pt-4">
+                  <p className="text-sm font-medium mb-3 flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-success" />
+                    Informações Financeiras
+                  </p>
+                  
+                  {/* Transação vinculada */}
+                  {(() => {
+                    const linkedTransaction = transactions.find(
+                      (t) => t.budgetId === selectedBudget.id
+                    );
+                    const wallet = getWalletByClientId(selectedBudget.clientId);
+                    const walletMovement = wallet?.movements.find(
+                      (m) => m.description.includes(selectedBudget.code)
+                    );
+
+                    return (
+                      <div className="space-y-3">
+                        {linkedTransaction && (
+                          <div className="bg-success/10 border border-success/20 rounded-lg p-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <DollarSign className="h-4 w-4 text-success" />
+                                <span className="text-sm font-medium text-success">
+                                  Receita Registrada
+                                </span>
+                              </div>
+                              <Badge
+                                variant="outline"
+                                className={
+                                  linkedTransaction.status === "completed"
+                                    ? "border-success/30 text-success"
+                                    : "border-warning/30 text-warning"
+                                }
+                              >
+                                {linkedTransaction.status === "completed"
+                                  ? "Pago"
+                                  : "Pendente"}
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {linkedTransaction.description}
+                            </p>
+                            <p className="text-sm font-semibold text-success mt-1">
+                              R$ {linkedTransaction.value.toLocaleString("pt-BR")}
+                            </p>
+                          </div>
+                        )}
+
+                        {walletMovement && (
+                          <div className="bg-primary/10 border border-primary/20 rounded-lg p-3">
+                            <div className="flex items-center gap-2">
+                              <Wallet className="h-4 w-4 text-primary" />
+                              <span className="text-sm font-medium text-primary">
+                                Carteira Virtual Atualizada
+                              </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {walletMovement.description}
+                            </p>
+                            <p className="text-sm font-semibold text-primary mt-1">
+                              + R$ {walletMovement.value.toLocaleString("pt-BR")}
+                            </p>
+                            {wallet && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Saldo atual: R$ {wallet.balance.toLocaleString("pt-BR")}
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {!linkedTransaction && !walletMovement && (
+                          <p className="text-sm text-muted-foreground">
+                            Nenhuma informação financeira vinculada.
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </div>

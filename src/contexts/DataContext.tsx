@@ -109,6 +109,7 @@ export interface Transaction {
   category: string;
   status: TransactionStatus;
   clientId?: number; // Vinculado a um cliente (opcional)
+  budgetId?: number; // Vinculado a um orçamento (opcional)
   notes?: string;
 }
 
@@ -763,6 +764,60 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (status === "rejected") updates.rejectedAt = now;
 
     updateBudget(budgetId, updates);
+
+    // ========================================
+    // INTEGRAÇÃO FINANCEIRA - ORÇAMENTO APROVADO
+    // ========================================
+    if (status === "approved") {
+      const budget = budgets.find((b) => b.id === budgetId);
+      if (budget) {
+        const client = clients.find((c) => c.id === budget.clientId);
+        
+        // Determinar categoria baseado no título/descrição do orçamento
+        const isTrafficBudget = 
+          budget.title.toLowerCase().includes("tráfego") ||
+          budget.title.toLowerCase().includes("traffic") ||
+          budget.title.toLowerCase().includes("ads") ||
+          budget.title.toLowerCase().includes("meta") ||
+          budget.title.toLowerCase().includes("google") ||
+          budget.description?.toLowerCase().includes("tráfego") ||
+          budget.description?.toLowerCase().includes("gestão de tráfego");
+        
+        const category = isTrafficBudget ? "Gestão de Tráfego" : "Serviço de Cliente";
+
+        // Criar transação de receita vinculada ao cliente e orçamento
+        addTransaction({
+          type: "income",
+          description: `${budget.code} - ${budget.title}`,
+          value: budget.totalValue,
+          date: now,
+          category,
+          status: "pending", // Pendente até o pagamento ser confirmado
+          clientId: budget.clientId,
+          budgetId: budget.id,
+          notes: `Receita gerada automaticamente pela aprovação do orçamento ${budget.code}${client ? ` - Cliente: ${client.name}` : ""}`,
+        });
+
+        // Se for orçamento de tráfego, criar/atualizar carteira virtual
+        if (isTrafficBudget) {
+          const wallet = getWalletByClientId(budget.clientId);
+          const movementData = {
+            type: "deposit" as const,
+            value: budget.totalValue,
+            date: now,
+            description: `Depósito via ${budget.code} - ${budget.title}`,
+          };
+
+          if (!wallet) {
+            // Criar carteira com depósito inicial
+            createWallet(budget.clientId, 0, movementData);
+          } else {
+            // Adicionar movimentação na carteira existente
+            addWalletMovement(wallet.id, movementData);
+          }
+        }
+      }
+    }
   };
 
   const getBudgetsByClientId = (clientId: number): Budget[] => {
