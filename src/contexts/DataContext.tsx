@@ -131,6 +131,60 @@ export interface ClientWallet {
 }
 // ========================================
 
+// ========================================
+// ORÇAMENTOS
+// ========================================
+export type BudgetStatus = "draft" | "sent" | "approved" | "rejected";
+
+export const BUDGET_STATUS_CONFIG: Record<
+  BudgetStatus,
+  { label: string; className: string }
+> = {
+  draft: {
+    label: "Rascunho",
+    className: "bg-muted text-muted-foreground border-muted",
+  },
+  sent: {
+    label: "Enviado",
+    className: "bg-primary/20 text-primary border-primary/30",
+  },
+  approved: {
+    label: "Aprovado",
+    className: "bg-success/20 text-success border-success/30",
+  },
+  rejected: {
+    label: "Recusado",
+    className: "bg-destructive/20 text-destructive border-destructive/30",
+  },
+};
+
+export interface BudgetItem {
+  id: number;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface Budget {
+  id: number;
+  code: string; // ORC-001, ORC-002, etc.
+  clientId: number;
+  title: string;
+  description?: string;
+  items: BudgetItem[];
+  totalValue: number;
+  status: BudgetStatus;
+  createdAt: string;
+  validUntil: string; // Data de validade
+  sentAt?: string; // Data de envio
+  approvedAt?: string; // Data de aprovação
+  rejectedAt?: string; // Data de recusa
+  notes?: string;
+}
+
+const initialBudgets: Budget[] = [];
+// ========================================
+
 export interface Client {
   id: number;
   name: string;
@@ -139,7 +193,7 @@ export interface Client {
   status: ClientStatus;
   projects: number;
   value: number;
-  avatar: string;
+  avatar?: string;
   responsible?: string;
   socialMedia?: {
     instagram?: string;
@@ -149,6 +203,7 @@ export interface Client {
   };
   leadId?: number; // Referência ao lead original
   origin?: LeadOrigin;
+  convertedAt?: string; // Data de conversão do lead
   profileAnalysis?: ProfileAnalysis; // Análise do perfil
 }
 
@@ -212,9 +267,32 @@ interface DataContextType {
   getBalance: () => number;
   getClientTransactions: (clientId: number) => Transaction[];
 
+  // Orçamentos
+  budgets: Budget[];
+  addBudget: (budget: Omit<Budget, "id" | "code" | "createdAt">) => Budget;
+  updateBudget: (budgetId: number, data: Partial<Budget>) => void;
+  deleteBudget: (budgetId: number) => boolean;
+  updateBudgetStatus: (budgetId: number, status: BudgetStatus) => void;
+  getBudgetsByClientId: (clientId: number) => Budget[];
+
   // Utils
   getLeadByClientId: (clientId: number) => Lead | undefined;
   getClientByLeadId: (leadId: number) => Client | undefined;
+  getClientWithLeadData: (clientId: number) =>
+    | (Client & {
+        leadData: {
+          name: string;
+          company?: string;
+          origin: LeadOrigin;
+          createdAt: string;
+          notes?: string;
+          followers?: number;
+          posts?: number;
+          monthlyBudget?: number;
+          originalValue?: number;
+        } | null;
+      })
+    | null;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -224,6 +302,7 @@ const LEADS_STORAGE_KEY = "turbine_leads";
 const CLIENTS_STORAGE_KEY = "turbine_clients";
 const TRANSACTIONS_STORAGE_KEY = "turbine_transactions";
 const WALLETS_STORAGE_KEY = "turbine_wallets";
+const BUDGETS_STORAGE_KEY = "turbine_budgets";
 
 // Helper functions para LocalStorage
 const loadFromStorage = <T,>(key: string, fallback: T): T => {
@@ -256,6 +335,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [wallets, setWallets] = useState<ClientWallet[]>(() =>
     loadFromStorage(WALLETS_STORAGE_KEY, initialWallets),
   );
+  const [budgets, setBudgets] = useState<Budget[]>(() =>
+    loadFromStorage(BUDGETS_STORAGE_KEY, initialBudgets),
+  );
 
   // Salvar no LocalStorage quando os dados mudarem
   useEffect(() => {
@@ -273,6 +355,72 @@ export function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     saveToStorage(WALLETS_STORAGE_KEY, wallets);
   }, [wallets]);
+
+  useEffect(() => {
+    saveToStorage(BUDGETS_STORAGE_KEY, budgets);
+  }, [budgets]);
+
+  // ========================================
+  // VALIDAÇÃO DE CONSISTÊNCIA LEAD-CLIENTE
+  // Garante integridade das referências
+  // ========================================
+  useEffect(() => {
+    let leadsUpdated = false;
+    let clientsUpdated = false;
+    const updatedLeads = [...leads];
+    const updatedClients = [...clients];
+
+    // 1. Verificar clientes que têm leadId mas o lead não existe mais
+    updatedClients.forEach((client, index) => {
+      if (client.leadId) {
+        const lead = leads.find((l) => l.id === client.leadId);
+        if (!lead) {
+          // Lead não existe mais - manter cliente mas remover referência
+          updatedClients[index] = { ...client, leadId: undefined };
+          clientsUpdated = true;
+          console.warn(
+            `Cliente ${client.id}: Lead ${client.leadId} não encontrado, referência removida.`,
+          );
+        }
+      }
+    });
+
+    // 2. Verificar leads convertidos que apontam para cliente inexistente
+    updatedLeads.forEach((lead, index) => {
+      if (lead.convertedToClientId) {
+        const client = clients.find((c) => c.id === lead.convertedToClientId);
+        if (!client) {
+          // Cliente não existe mais - resetar lead
+          updatedLeads[index] = {
+            ...lead,
+            convertedToClientId: undefined,
+            status: "proposta" as LeadStatus,
+          };
+          leadsUpdated = true;
+          console.warn(
+            `Lead ${lead.id}: Cliente ${lead.convertedToClientId} não encontrado, conversão desfeita.`,
+          );
+        }
+      }
+    });
+
+    // 3. Sincronizar origem do cliente com o lead (se cliente veio de lead)
+    updatedClients.forEach((client, index) => {
+      if (client.leadId) {
+        const lead = updatedLeads.find((l) => l.id === client.leadId);
+        if (lead && client.origin !== lead.origin) {
+          // Usar origem do lead como referência
+          updatedClients[index] = { ...client, origin: lead.origin };
+          clientsUpdated = true;
+        }
+      }
+    });
+
+    // Aplicar correções se necessário
+    if (leadsUpdated) setLeads(updatedLeads);
+    if (clientsUpdated) setClients(updatedClients);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Rodar apenas na inicialização
 
   // Lead Functions
   const addLead = (
@@ -337,10 +485,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
       status: "active",
       projects: 0,
       value: lead.value || 0,
-      avatar: "",
       responsible: lead.name,
       leadId: lead.id,
       origin: lead.origin,
+      convertedAt: new Date().toISOString().split("T")[0],
       ...clientData,
     };
 
@@ -407,6 +555,37 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const getClientByLeadId = (leadId: number): Client | undefined => {
     return clients.find((c) => c.leadId === leadId);
+  };
+
+  /**
+   * Retorna os dados consolidados do cliente com informações do lead de origem
+   * Use quando precisar dos dados completos (lead + cliente)
+   */
+  const getClientWithLeadData = (clientId: number) => {
+    const client = clients.find((c) => c.id === clientId);
+    if (!client) return null;
+
+    const lead = client.leadId
+      ? leads.find((l) => l.id === client.leadId)
+      : null;
+
+    return {
+      ...client,
+      // Dados do lead original (somente leitura)
+      leadData: lead
+        ? {
+            name: lead.name,
+            company: lead.company,
+            origin: lead.origin,
+            createdAt: lead.createdAt,
+            notes: lead.notes,
+            followers: lead.followers,
+            posts: lead.posts,
+            monthlyBudget: lead.monthlyBudget,
+            originalValue: lead.value,
+          }
+        : null,
+    };
   };
 
   // ========================================
@@ -538,6 +717,58 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return transactions.filter((t) => t.clientId === clientId);
   };
 
+  // ========================================
+  // FUNÇÕES DE ORÇAMENTOS
+  // ========================================
+
+  const generateBudgetCode = (): string => {
+    const nextNumber = budgets.length + 1;
+    return `ORC-${String(nextNumber).padStart(3, "0")}`;
+  };
+
+  const addBudget = (
+    budgetData: Omit<Budget, "id" | "code" | "createdAt">,
+  ): Budget => {
+    const newBudget: Budget = {
+      ...budgetData,
+      id: budgets.length > 0 ? Math.max(...budgets.map((b) => b.id)) + 1 : 1,
+      code: generateBudgetCode(),
+      createdAt: new Date().toISOString().split("T")[0],
+    };
+    setBudgets([newBudget, ...budgets]);
+    return newBudget;
+  };
+
+  const updateBudget = (budgetId: number, data: Partial<Budget>) => {
+    setBudgets(
+      budgets.map((budget) =>
+        budget.id === budgetId ? { ...budget, ...data } : budget,
+      ),
+    );
+  };
+
+  const deleteBudget = (budgetId: number): boolean => {
+    const budget = budgets.find((b) => b.id === budgetId);
+    if (!budget) return false;
+    setBudgets(budgets.filter((b) => b.id !== budgetId));
+    return true;
+  };
+
+  const updateBudgetStatus = (budgetId: number, status: BudgetStatus) => {
+    const now = new Date().toISOString().split("T")[0];
+    const updates: Partial<Budget> = { status };
+
+    if (status === "sent") updates.sentAt = now;
+    if (status === "approved") updates.approvedAt = now;
+    if (status === "rejected") updates.rejectedAt = now;
+
+    updateBudget(budgetId, updates);
+  };
+
+  const getBudgetsByClientId = (clientId: number): Budget[] => {
+    return budgets.filter((b) => b.clientId === clientId);
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -562,8 +793,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
         getTotalExpenses,
         getBalance,
         getClientTransactions,
+        budgets,
+        addBudget,
+        updateBudget,
+        deleteBudget,
+        updateBudgetStatus,
+        getBudgetsByClientId,
         getLeadByClientId,
         getClientByLeadId,
+        getClientWithLeadData,
       }}
     >
       {children}

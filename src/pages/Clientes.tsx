@@ -131,6 +131,34 @@ export default function Clientes() {
     overallScore: 5,
     analysisNotes: "",
   });
+  const [formErrors, setFormErrors] = useState<{
+    name?: string;
+    email?: string;
+    phone?: string;
+  }>({});
+
+  const validateForm = () => {
+    const errors: { name?: string; email?: string; phone?: string } = {};
+
+    if (!formData.name.trim()) {
+      errors.name = "Nome é obrigatório";
+    }
+
+    if (!formData.email.trim()) {
+      errors.email = "Email é obrigatório";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = "Email inválido";
+    }
+
+    if (!formData.phone.trim()) {
+      errors.phone = "Telefone é obrigatório";
+    } else if (formData.phone.replace(/\D/g, "").length < 10) {
+      errors.phone = "Telefone inválido";
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   // Filtro de clientes
   const filteredClients = clients.filter((client) => {
@@ -171,6 +199,8 @@ export default function Clientes() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!validateForm()) return;
+
     addClient({
       name: formData.name,
       email: formData.email,
@@ -202,6 +232,7 @@ export default function Clientes() {
   };
 
   const resetForm = () => {
+    setFormErrors({});
     setFormData({
       name: "",
       email: "",
@@ -250,6 +281,8 @@ export default function Clientes() {
   const handleEditSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientToEdit) return;
+
+    if (!validateForm()) return;
 
     updateClient(clientToEdit.id, {
       name: formData.name,
@@ -1015,8 +1048,11 @@ export default function Clientes() {
                     value={formData.name}
                     onChange={handleInputChange}
                     required
-                    className="bg-sidebar-accent/50 border-white/10"
+                    className={`bg-sidebar-accent/50 border-white/10 ${formErrors.name ? "border-red-500" : ""}`}
                   />
+                  {formErrors.name && (
+                    <p className="text-xs text-red-400">{formErrors.name}</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1030,8 +1066,11 @@ export default function Clientes() {
                       value={formData.email}
                       onChange={handleInputChange}
                       required
-                      className="bg-sidebar-accent/50 border-white/10"
+                      className={`bg-sidebar-accent/50 border-white/10 ${formErrors.email ? "border-red-500" : ""}`}
                     />
+                    {formErrors.email && (
+                      <p className="text-xs text-red-400">{formErrors.email}</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -1044,8 +1083,11 @@ export default function Clientes() {
                       value={formData.phone}
                       onChange={handleInputChange}
                       required
-                      className="bg-sidebar-accent/50 border-white/10"
+                      className={`bg-sidebar-accent/50 border-white/10 ${formErrors.phone ? "border-red-500" : ""}`}
                     />
+                    {formErrors.phone && (
+                      <p className="text-xs text-red-400">{formErrors.phone}</p>
+                    )}
                   </div>
                 </div>
 
@@ -1304,8 +1346,11 @@ export default function Clientes() {
                     value={formData.name}
                     onChange={handleInputChange}
                     required
-                    className="bg-sidebar-accent/50 border-white/10"
+                    className={`bg-sidebar-accent/50 border-white/10 ${formErrors.name ? "border-red-500" : ""}`}
                   />
+                  {formErrors.name && (
+                    <p className="text-xs text-red-400">{formErrors.name}</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1319,8 +1364,11 @@ export default function Clientes() {
                       value={formData.email}
                       onChange={handleInputChange}
                       required
-                      className="bg-sidebar-accent/50 border-white/10"
+                      className={`bg-sidebar-accent/50 border-white/10 ${formErrors.email ? "border-red-500" : ""}`}
                     />
+                    {formErrors.email && (
+                      <p className="text-xs text-red-400">{formErrors.email}</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -1333,8 +1381,11 @@ export default function Clientes() {
                       value={formData.phone}
                       onChange={handleInputChange}
                       required
-                      className="bg-sidebar-accent/50 border-white/10"
+                      className={`bg-sidebar-accent/50 border-white/10 ${formErrors.phone ? "border-red-500" : ""}`}
                     />
+                    {formErrors.phone && (
+                      <p className="text-xs text-red-400">{formErrors.phone}</p>
+                    )}
                   </div>
                 </div>
 

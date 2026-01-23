@@ -130,6 +130,34 @@ export default function Leads() {
     linkedin: "",
     twitter: "",
   });
+  const [formErrors, setFormErrors] = useState<{
+    name?: string;
+    email?: string;
+    phone?: string;
+  }>({});
+
+  const validateForm = () => {
+    const errors: { name?: string; email?: string; phone?: string } = {};
+
+    if (!formData.name.trim()) {
+      errors.name = "Nome é obrigatório";
+    }
+
+    if (!formData.email.trim()) {
+      errors.email = "Email é obrigatório";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = "Email inválido";
+    }
+
+    if (!formData.phone.trim()) {
+      errors.phone = "Telefone é obrigatório";
+    } else if (formData.phone.replace(/\D/g, "").length < 10) {
+      errors.phone = "Telefone inválido";
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const filteredLeads = leads.filter((lead) => {
     const matchesSearch =
@@ -151,6 +179,8 @@ export default function Leads() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!validateForm()) return;
+
     addLead({
       name: formData.name,
       email: formData.email,
@@ -167,6 +197,7 @@ export default function Leads() {
     });
 
     setIsDialogOpen(false);
+    setFormErrors({});
     setFormData({
       name: "",
       email: "",
@@ -718,8 +749,11 @@ export default function Leads() {
                   value={formData.name}
                   onChange={handleInputChange}
                   required
-                  className="bg-sidebar-accent/50 border-white/10"
+                  className={`bg-sidebar-accent/50 border-white/10 ${formErrors.name ? "border-red-500" : ""}`}
                 />
+                {formErrors.name && (
+                  <p className="text-xs text-red-400">{formErrors.name}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -733,8 +767,11 @@ export default function Leads() {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
-                    className="bg-sidebar-accent/50 border-white/10"
+                    className={`bg-sidebar-accent/50 border-white/10 ${formErrors.email ? "border-red-500" : ""}`}
                   />
+                  {formErrors.email && (
+                    <p className="text-xs text-red-400">{formErrors.email}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -747,8 +784,11 @@ export default function Leads() {
                     value={formData.phone}
                     onChange={handleInputChange}
                     required
-                    className="bg-sidebar-accent/50 border-white/10"
+                    className={`bg-sidebar-accent/50 border-white/10 ${formErrors.phone ? "border-red-500" : ""}`}
                   />
+                  {formErrors.phone && (
+                    <p className="text-xs text-red-400">{formErrors.phone}</p>
+                  )}
                 </div>
               </div>
 
