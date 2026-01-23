@@ -772,9 +772,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const budget = budgets.find((b) => b.id === budgetId);
       if (budget) {
         const client = clients.find((c) => c.id === budget.clientId);
-        
+
         // Determinar categoria baseado no título/descrição do orçamento
-        const isTrafficBudget = 
+        const isTrafficBudget =
           budget.title.toLowerCase().includes("tráfego") ||
           budget.title.toLowerCase().includes("traffic") ||
           budget.title.toLowerCase().includes("ads") ||
@@ -782,8 +782,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
           budget.title.toLowerCase().includes("google") ||
           budget.description?.toLowerCase().includes("tráfego") ||
           budget.description?.toLowerCase().includes("gestão de tráfego");
-        
-        const category = isTrafficBudget ? "Gestão de Tráfego" : "Serviço de Cliente";
+
+        const category = isTrafficBudget
+          ? "Gestão de Tráfego"
+          : "Serviço de Cliente";
 
         // Criar transação de receita vinculada ao cliente e orçamento
         addTransaction({

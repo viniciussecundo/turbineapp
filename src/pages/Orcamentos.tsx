@@ -268,9 +268,9 @@ export default function Orcamentos() {
 
   const handleApproveBudget = (budget: Budget) => {
     updateBudgetStatus(budget.id, "approved");
-    
+
     // Verificar se é orçamento de tráfego para mensagem personalizada
-    const isTrafficBudget = 
+    const isTrafficBudget =
       budget.title.toLowerCase().includes("tráfego") ||
       budget.title.toLowerCase().includes("traffic") ||
       budget.title.toLowerCase().includes("ads") ||
@@ -278,12 +278,12 @@ export default function Orcamentos() {
       budget.title.toLowerCase().includes("google") ||
       budget.description?.toLowerCase().includes("tráfego") ||
       budget.description?.toLowerCase().includes("gestão de tráfego");
-    
-    const client = clients.find(c => c.id === budget.clientId);
-    
+
+    const client = clients.find((c) => c.id === budget.clientId);
+
     toast({
       title: "✅ Orçamento Aprovado!",
-      description: isTrafficBudget 
+      description: isTrafficBudget
         ? `Receita de R$ ${budget.totalValue.toLocaleString("pt-BR")} criada e cartão virtual de ${client?.name || "cliente"} atualizado.`
         : `Receita de R$ ${budget.totalValue.toLocaleString("pt-BR")} criada automaticamente.`,
     });
@@ -1133,15 +1133,15 @@ export default function Orcamentos() {
                     <TrendingUp className="h-4 w-4 text-success" />
                     Informações Financeiras
                   </p>
-                  
+
                   {/* Transação vinculada */}
                   {(() => {
                     const linkedTransaction = transactions.find(
-                      (t) => t.budgetId === selectedBudget.id
+                      (t) => t.budgetId === selectedBudget.id,
                     );
                     const wallet = getWalletByClientId(selectedBudget.clientId);
-                    const walletMovement = wallet?.movements.find(
-                      (m) => m.description.includes(selectedBudget.code)
+                    const walletMovement = wallet?.movements.find((m) =>
+                      m.description.includes(selectedBudget.code),
                     );
 
                     return (
@@ -1172,7 +1172,8 @@ export default function Orcamentos() {
                               {linkedTransaction.description}
                             </p>
                             <p className="text-sm font-semibold text-success mt-1">
-                              R$ {linkedTransaction.value.toLocaleString("pt-BR")}
+                              R${" "}
+                              {linkedTransaction.value.toLocaleString("pt-BR")}
                             </p>
                           </div>
                         )}
@@ -1189,11 +1190,13 @@ export default function Orcamentos() {
                               {walletMovement.description}
                             </p>
                             <p className="text-sm font-semibold text-primary mt-1">
-                              + R$ {walletMovement.value.toLocaleString("pt-BR")}
+                              + R${" "}
+                              {walletMovement.value.toLocaleString("pt-BR")}
                             </p>
                             {wallet && (
                               <p className="text-xs text-muted-foreground mt-1">
-                                Saldo atual: R$ {wallet.balance.toLocaleString("pt-BR")}
+                                Saldo atual: R${" "}
+                                {wallet.balance.toLocaleString("pt-BR")}
                               </p>
                             )}
                           </div>
