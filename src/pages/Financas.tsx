@@ -10,6 +10,11 @@ import {
   Wallet,
   Users,
   Check,
+  Pencil,
+  ChevronDown,
+  ChevronRight,
+  Calendar,
+  FileText,
 } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Button } from "@/components/ui/button";
@@ -56,6 +61,11 @@ export default function Financas() {
 
   const [isTransactionOpen, setIsTransactionOpen] = useState(false);
   const [isWalletOpen, setIsWalletOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<number | null>(
+    null,
+  );
+  const [expandedTransactionId, setExpandedTransactionId] = useState<number | null>(null);
   const [transactionForm, setTransactionForm] = useState({
     type: "income" as TransactionType,
     description: "",
@@ -63,6 +73,14 @@ export default function Financas() {
     category: "",
     clientId: "",
     notes: "",
+  });
+  const [editForm, setEditForm] = useState({
+    description: "",
+    value: "",
+    category: "",
+    clientId: "",
+    notes: "",
+    date: "",
   });
   const [walletForm, setWalletForm] = useState({
     clientId: "",
@@ -147,6 +165,42 @@ export default function Financas() {
       description: "",
     });
     setIsWalletOpen(false);
+  };
+
+  const handleEditTransaction = (tx: (typeof transactions)[0]) => {
+    setEditingTransaction(tx.id);
+    setEditForm({
+      description: tx.description,
+      value: tx.value.toString(),
+      category: tx.category,
+      clientId: tx.clientId?.toString() || "",
+      notes: tx.notes || "",
+      date: tx.date,
+    });
+    setIsEditOpen(true);
+  };
+
+  const handleSaveEdit = () => {
+    if (
+      !editingTransaction ||
+      !editForm.description ||
+      !editForm.value ||
+      !editForm.category ||
+      !editForm.date
+    )
+      return;
+
+    updateTransaction(editingTransaction, {
+      description: editForm.description,
+      value: parseFloat(editForm.value),
+      category: editForm.category,
+      clientId: editForm.clientId ? parseInt(editForm.clientId) : undefined,
+      notes: editForm.notes || undefined,
+      date: editForm.date,
+    });
+
+    setIsEditOpen(false);
+    setEditingTransaction(null);
   };
 
   // Clientes que têm carteira virtual
@@ -394,6 +448,109 @@ export default function Financas() {
         </div>
       </div>
 
+      {/* Modal de Edição de Transação */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="glass border-white/10">
+          <DialogHeader>
+            <DialogTitle>Editar Transação</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label>Descrição</Label>
+              <Input
+                value={editForm.description}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, description: e.target.value })
+                }
+                placeholder="Ex: Pagamento de serviço"
+                className="bg-secondary/50 border-white/10"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Valor (R$)</Label>
+              <Input
+                type="number"
+                value={editForm.value}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, value: e.target.value })
+                }
+                placeholder="0,00"
+                className="bg-secondary/50 border-white/10"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Categoria</Label>
+              <Select
+                value={editForm.category}
+                onValueChange={(v) => setEditForm({ ...editForm, category: v })}
+              >
+                <SelectTrigger className="bg-secondary/50 border-white/10">
+                  <SelectValue placeholder="Selecione a categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[...INCOME_CATEGORIES, ...EXPENSE_CATEGORIES]
+                    .filter((cat, index, self) => self.indexOf(cat) === index)
+                    .map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Vincular a Cliente (opcional)</Label>
+              <Select
+                value={editForm.clientId || "none"}
+                onValueChange={(v) =>
+                  setEditForm({ ...editForm, clientId: v === "none" ? "" : v })
+                }
+              >
+                <SelectTrigger className="bg-secondary/50 border-white/10">
+                  <SelectValue placeholder="Nenhum cliente selecionado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhum</SelectItem>
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id.toString()}>
+                      {client.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Data do Lançamento</Label>
+              <Input
+                type="date"
+                value={editForm.date}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, date: e.target.value })
+                }
+                className="bg-secondary/50 border-white/10"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Observações (opcional)</Label>
+              <Textarea
+                value={editForm.notes}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, notes: e.target.value })
+                }
+                placeholder="Detalhes adicionais..."
+                className="bg-secondary/50 border-white/10"
+              />
+            </div>
+            <Button
+              onClick={handleSaveEdit}
+              className="w-full gradient-primary text-white"
+            >
+              Salvar Alterações
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
@@ -446,7 +603,7 @@ export default function Financas() {
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               {transactions.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">
                   Nenhuma transação registrada
@@ -456,82 +613,159 @@ export default function Financas() {
                   const client = tx.clientId
                     ? clients.find((c) => c.id === tx.clientId)
                     : null;
+                  const isExpanded = expandedTransactionId === tx.id;
                   return (
-                    <div
-                      key={tx.id}
-                      className="flex items-center gap-4 p-4 rounded-lg hover:bg-sidebar-accent/50 transition-colors"
-                    >
+                    <div key={tx.id} className="rounded-lg border border-white/5 overflow-hidden">
+                      {/* Linha principal - clicável para expandir */}
                       <div
-                        className={`flex h-10 w-10 items-center justify-center rounded-lg ${
-                          tx.type === "income"
-                            ? "bg-success/10"
-                            : "bg-destructive/10"
-                        }`}
+                        className={`flex items-center gap-4 p-4 hover:bg-sidebar-accent/50 transition-colors cursor-pointer ${isExpanded ? "bg-sidebar-accent/30" : ""}`}
+                        onClick={() => setExpandedTransactionId(isExpanded ? null : tx.id)}
                       >
-                        {tx.type === "income" ? (
-                          <ArrowUpRight className="h-5 w-5 text-success" />
-                        ) : (
-                          <ArrowDownRight className="h-5 w-5 text-destructive" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-foreground">
-                          {tx.description}
-                        </p>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span>{formatDate(tx.date)}</span>
-                          <span>•</span>
-                          <span>{tx.category}</span>
-                          {client && (
-                            <>
-                              <span>•</span>
-                              <span className="flex items-center gap-1">
-                                <Users className="h-3 w-3" />
-                                {client.name}
-                              </span>
-                            </>
+                        <div className="text-muted-foreground">
+                          {isExpanded ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
                           )}
                         </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
-                          <p
-                            className={`text-sm font-semibold ${
-                              tx.type === "income"
-                                ? "text-success"
-                                : "text-destructive"
-                            }`}
-                          >
-                            {tx.type === "income" ? "+" : "-"}
-                            {formatCurrency(tx.value)}
-                          </p>
-                          <Badge
-                            variant="outline"
-                            className={
-                              tx.status === "completed"
-                                ? "border-success/30 text-success"
-                                : "border-warning/30 text-warning"
-                            }
-                          >
-                            {tx.status === "completed"
-                              ? "Concluído"
-                              : "Pendente"}
-                          </Badge>
+                        <div
+                          className={`flex h-10 w-10 items-center justify-center rounded-lg ${
+                            tx.type === "income"
+                              ? "bg-success/10"
+                              : "bg-destructive/10"
+                          }`}
+                        >
+                          {tx.type === "income" ? (
+                            <ArrowUpRight className="h-5 w-5 text-success" />
+                          ) : (
+                            <ArrowDownRight className="h-5 w-5 text-destructive" />
+                          )}
                         </div>
-                        {tx.status === "pending" && (
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-foreground">
+                            {tx.description}
+                          </p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>{formatDate(tx.date)}</span>
+                            <span>•</span>
+                            <span>{tx.category}</span>
+                            {client && (
+                              <>
+                                <span>•</span>
+                                <span className="flex items-center gap-1">
+                                  <Users className="h-3 w-3" />
+                                  {client.name}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <p
+                              className={`text-sm font-semibold ${
+                                tx.type === "income"
+                                  ? "text-success"
+                                  : "text-destructive"
+                              }`}
+                            >
+                              {tx.type === "income" ? "+" : "-"}
+                              {formatCurrency(tx.value)}
+                            </p>
+                            <Badge
+                              variant="outline"
+                              className={
+                                tx.status === "completed"
+                                  ? "border-success/30 text-success"
+                                  : "border-warning/30 text-warning"
+                              }
+                            >
+                              {tx.status === "completed"
+                                ? "Concluído"
+                                : "Pendente"}
+                            </Badge>
+                          </div>
+                          {tx.status === "pending" && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-success hover:bg-success/10"
+                              title="Confirmar Pagamento"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateTransaction(tx.id, { status: "completed" });
+                              }}
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-success hover:bg-success/10"
-                            title="Confirmar Pagamento"
-                            onClick={() =>
-                              updateTransaction(tx.id, { status: "completed" })
-                            }
+                            className="h-8 w-8 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                            title="Editar Transação"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditTransaction(tx);
+                            }}
                           >
-                            <Check className="h-4 w-4" />
+                            <Pencil className="h-4 w-4" />
                           </Button>
-                        )}
+                        </div>
                       </div>
+                      
+                      {/* Detalhes expandidos */}
+                      {isExpanded && (
+                        <div className="border-t border-white/5 bg-sidebar-accent/20 p-4">
+                          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                            <div className="space-y-1">
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                Data do Lançamento
+                              </p>
+                              <p className="text-sm font-medium text-foreground">
+                                {formatDate(tx.date)}
+                              </p>
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-xs text-muted-foreground">Tipo</p>
+                              <p className="text-sm font-medium text-foreground">
+                                {tx.type === "income" ? "Entrada (Receita)" : "Saída (Despesa)"}
+                              </p>
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-xs text-muted-foreground">Categoria</p>
+                              <p className="text-sm font-medium text-foreground">{tx.category}</p>
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-xs text-muted-foreground">Status</p>
+                              <p className="text-sm font-medium text-foreground">
+                                {tx.status === "completed" ? "Concluído" : "Pendente"}
+                              </p>
+                            </div>
+                            {client && (
+                              <div className="space-y-1">
+                                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                  <Users className="h-3 w-3" />
+                                  Cliente Vinculado
+                                </p>
+                                <p className="text-sm font-medium text-foreground">{client.name}</p>
+                              </div>
+                            )}
+                            {tx.notes && (
+                              <div className="space-y-1 sm:col-span-2 lg:col-span-3">
+                                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                  <FileText className="h-3 w-3" />
+                                  Observações
+                                </p>
+                                <p className="text-sm text-foreground bg-secondary/30 rounded-md p-2">
+                                  {tx.notes}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })

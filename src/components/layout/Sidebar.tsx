@@ -12,6 +12,9 @@ import {
   X,
   Menu,
   Target,
+  Plus,
+  UserPlus,
+  FilePlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -27,8 +30,9 @@ const navItems = [
 ];
 
 const quickAccess = [
-  { label: "Status Serviços", color: "bg-success" },
-  { label: "Pendentes", color: "bg-warning" },
+  { label: "Novo Cliente", path: "/clientes?new=true", icon: UserPlus },
+  { label: "Novo Lead", path: "/leads?new=true", icon: Target },
+  { label: "Novo Orçamento", path: "/orcamentos?new=true", icon: FilePlus },
 ];
 
 interface SidebarProps {
@@ -121,16 +125,20 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               Acesso Rápido
             </h4>
             <div className="space-y-1">
-              {quickAccess.map((item) => (
-                <Button
-                  key={item.label}
-                  variant="ghost"
-                  className="w-full justify-start gap-3 text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-white h-9 px-3"
-                >
-                  <div className={cn("h-2 w-2 rounded-full", item.color)} />
-                  <span>{item.label}</span>
-                </Button>
-              ))}
+              {quickAccess.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link key={item.label} to={item.path} onClick={onClose}>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start gap-3 text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-white h-9 px-3"
+                    >
+                      <Icon className="h-4 w-4 text-primary" />
+                      <span>{item.label}</span>
+                    </Button>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </div>
