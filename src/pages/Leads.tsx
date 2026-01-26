@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Plus,
   Search,
@@ -25,6 +25,10 @@ import {
   TrendingUp,
   Image,
   Wallet,
+  Bell,
+  Eye,
+  Sparkles,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,6 +59,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useData, LeadStatus, LeadOrigin, Lead } from "@/contexts/DataContext";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 const statusConfig: Record<
   LeadStatus,
@@ -101,6 +106,10 @@ export default function Leads() {
     deleteLead,
     convertLeadToClient,
     getClientByLeadId,
+    markLeadAsViewed,
+    markAllLeadsAsViewed,
+    getUnviewedLeadsCount,
+    addActivity,
   } = useData();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -111,6 +120,35 @@ export default function Leads() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [showNotification, setShowNotification] = useState(false);
+
+  // Verificar se há leads novos não visualizados
+  const unviewedCount = getUnviewedLeadsCount();
+  const unviewedLeads = leads.filter(
+    (lead) => lead.selfRegistered && !lead.viewed,
+  );
+
+  // Mostrar notificação quando houver leads não visualizados
+  useEffect(() => {
+    if (unviewedCount > 0) {
+      setShowNotification(true);
+    }
+  }, [unviewedCount]);
+
+  const handleMarkAllAsViewed = () => {
+    markAllLeadsAsViewed();
+    setShowNotification(false);
+    toast.success("Todos os leads foram marcados como visualizados");
+  };
+
+  const handleLeadClick = (lead: Lead) => {
+    // Marcar como visualizado ao expandir
+    if (lead.selfRegistered && !lead.viewed) {
+      markLeadAsViewed(lead.id);
+    }
+    setExpandedLeadId(expandedLeadId === lead.id ? null : lead.id);
+  };
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -196,6 +234,13 @@ export default function Leads() {
         : undefined,
     });
 
+    // Criar atividade de novo lead
+    addActivity({
+      type: "lead",
+      title: "Lead Adicionado",
+      description: `${formData.name}${formData.company ? ` - ${formData.company}` : ""}`,
+    });
+
     setIsDialogOpen(false);
     setFormErrors({});
     setFormData({
@@ -238,6 +283,13 @@ export default function Leads() {
       },
     });
 
+    // Criar atividade de conversão
+    addActivity({
+      type: "client",
+      title: "Lead Convertido!",
+      description: `${selectedLead.name} agora é cliente`,
+    });
+
     setIsConvertDialogOpen(false);
     setSelectedLead(null);
   };
@@ -269,6 +321,64 @@ export default function Leads() {
 
   return (
     <div className="space-y-8">
+      {/* Banner de Notificação de Novos Leads */}
+      {showNotification && unviewedCount > 0 && (
+        <div className="animate-in slide-in-from-top-2 duration-300">
+          <div className="relative overflow-hidden rounded-xl border border-primary/30 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-4">
+            {/* Efeito de brilho animado */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent animate-pulse" />
+
+            <div className="relative flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 ring-2 ring-primary/30">
+                    <Bell className="h-6 w-6 text-primary animate-bounce" />
+                  </div>
+                  <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
+                    {unviewedCount}
+                  </span>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    <h3 className="font-semibold text-foreground">
+                      {unviewedCount === 1
+                        ? "Novo lead cadastrado!"
+                        : `${unviewedCount} novos leads cadastrados!`}
+                    </h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {unviewedCount === 1
+                      ? "Um potencial cliente se cadastrou através do link público"
+                      : "Potenciais clientes se cadastraram através do link público"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-primary/30 text-primary hover:bg-primary/10"
+                  onClick={handleMarkAllAsViewed}
+                >
+                  <Eye className="mr-2 h-4 w-4" />
+                  Marcar como vistos
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowNotification(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -286,7 +396,7 @@ export default function Leads() {
             onClick={() => {
               const url = `${window.location.origin}/cadastro`;
               navigator.clipboard.writeText(url);
-              alert("Link copiado! Compartilhe com seus clientes:\n" + url);
+              toast.success("Link copiado para a área de transferência!");
             }}
           >
             <Link2 className="mr-2 h-4 w-4" />
@@ -447,24 +557,31 @@ export default function Leads() {
                 const isConverted = !!lead.convertedToClientId;
                 const linkedClient = getClientByLeadId(lead.id);
                 const isExpanded = expandedLeadId === lead.id;
+                const isUnviewed = lead.selfRegistered && !lead.viewed;
 
                 return (
                   <React.Fragment key={lead.id}>
                     <tr
-                      className={`border-b border-sidebar-border/50 hover:bg-sidebar-accent/30 transition-colors cursor-pointer ${isExpanded ? "bg-sidebar-accent/20" : ""}`}
-                      onClick={() =>
-                        setExpandedLeadId(isExpanded ? null : lead.id)
-                      }
+                      className={`border-b border-sidebar-border/50 hover:bg-sidebar-accent/30 transition-colors cursor-pointer ${isExpanded ? "bg-sidebar-accent/20" : ""} ${isUnviewed ? "bg-primary/5 ring-1 ring-primary/20" : ""}`}
+                      onClick={() => handleLeadClick(lead)}
                     >
                       <td className="py-4 px-4">
                         <div className="flex items-center gap-3">
-                          <div className="text-muted-foreground">
-                            {isExpanded ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4" />
-                            )}
-                          </div>
+                          {/* Indicador de novo lead */}
+                          {isUnviewed ? (
+                            <div className="relative">
+                              <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                              <div className="absolute inset-0 h-2 w-2 rounded-full bg-primary animate-ping" />
+                            </div>
+                          ) : (
+                            <div className="text-muted-foreground">
+                              {isExpanded ? (
+                                <ChevronDown className="h-4 w-4" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4" />
+                              )}
+                            </div>
+                          )}
                           <Avatar className="h-10 w-10 border border-white/10">
                             <AvatarFallback className="bg-primary/20 text-primary text-sm">
                               {lead.name.substring(0, 2).toUpperCase()}
@@ -475,7 +592,13 @@ export default function Leads() {
                               <p className="font-medium text-foreground">
                                 {lead.name}
                               </p>
-                              {lead.selfRegistered && (
+                              {isUnviewed && (
+                                <Badge className="text-xs bg-primary text-white border-0 animate-pulse">
+                                  <Sparkles className="h-3 w-3 mr-1" />
+                                  NOVO
+                                </Badge>
+                              )}
+                              {lead.selfRegistered && !isUnviewed && (
                                 <Badge
                                   variant="outline"
                                   className="text-xs bg-cyan-500/10 text-cyan-400 border-cyan-500/30"

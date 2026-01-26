@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   DollarSign,
   TrendingUp,
@@ -15,6 +15,8 @@ import {
   ChevronRight,
   Calendar,
   FileText,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Button } from "@/components/ui/button";
@@ -22,6 +24,8 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -49,6 +53,7 @@ export default function Financas() {
     transactions,
     addTransaction,
     updateTransaction,
+    deleteTransaction,
     clients,
     wallets,
     getWalletByClientId,
@@ -57,15 +62,26 @@ export default function Financas() {
     getTotalIncome,
     getTotalExpenses,
     getBalance,
+    addActivity,
   } = useData();
 
   const [isTransactionOpen, setIsTransactionOpen] = useState(false);
   const [isWalletOpen, setIsWalletOpen] = useState(false);
+  const [isWalletDetailOpen, setIsWalletDetailOpen] = useState(false);
+  const [selectedWallet, setSelectedWallet] = useState<
+    (typeof wallets)[0] | null
+  >(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [transactionToDelete, setTransactionToDelete] = useState<
+    (typeof transactions)[0] | null
+  >(null);
   const [editingTransaction, setEditingTransaction] = useState<number | null>(
     null,
   );
-  const [expandedTransactionId, setExpandedTransactionId] = useState<number | null>(null);
+  const [expandedTransactionId, setExpandedTransactionId] = useState<
+    number | null
+  >(null);
   const [transactionForm, setTransactionForm] = useState({
     type: "income" as TransactionType,
     description: "",
@@ -123,6 +139,14 @@ export default function Financas() {
         ? parseInt(transactionForm.clientId)
         : undefined,
       notes: transactionForm.notes || undefined,
+    });
+
+    // Criar atividade de nova transação
+    addActivity({
+      type: "transaction",
+      title:
+        transactionForm.type === "income" ? "Nova Receita" : "Nova Despesa",
+      description: `${transactionForm.description} - R$ ${parseFloat(transactionForm.value).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
     });
 
     setTransactionForm({
@@ -203,6 +227,62 @@ export default function Financas() {
     setEditingTransaction(null);
   };
 
+  const handleDeleteClick = (tx: (typeof transactions)[0]) => {
+    setTransactionToDelete(tx);
+    setIsDeleteOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (transactionToDelete) {
+      deleteTransaction(transactionToDelete.id);
+      setIsDeleteOpen(false);
+      setTransactionToDelete(null);
+      // Fechar detalhes expandidos se a transação deletada estava expandida
+      if (expandedTransactionId === transactionToDelete.id) {
+        setExpandedTransactionId(null);
+      }
+    }
+  };
+
+  const handleOpenWalletDetail = (wallet: (typeof wallets)[0]) => {
+    setSelectedWallet(wallet);
+    setWalletForm({
+      clientId: wallet.clientId.toString(),
+      type: "deposit",
+      value: "",
+      description: "",
+    });
+    setIsWalletDetailOpen(true);
+  };
+
+  const handleWalletDetailMovement = () => {
+    if (!selectedWallet || !walletForm.value || !walletForm.description) return;
+
+    addWalletMovement(selectedWallet.id, {
+      type: walletForm.type,
+      value: parseFloat(walletForm.value),
+      date: new Date().toISOString().split("T")[0],
+      description: walletForm.description,
+    });
+
+    // Limpar apenas os campos de valor e descrição
+    setWalletForm({
+      ...walletForm,
+      value: "",
+      description: "",
+    });
+  };
+
+  // Manter selectedWallet sincronizado quando wallets mudar
+  useEffect(() => {
+    if (selectedWallet) {
+      const updatedWallet = wallets.find((w) => w.id === selectedWallet.id);
+      if (updatedWallet) {
+        setSelectedWallet(updatedWallet);
+      }
+    }
+  }, [wallets]);
+
   // Clientes que têm carteira virtual
   const clientsWithWallet = clients.filter((c) => getWalletByClientId(c.id));
   const activeClients = clients.filter((c) => c.status === "active");
@@ -220,98 +300,6 @@ export default function Financas() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Dialog open={isWalletOpen} onOpenChange={setIsWalletOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="border-white/10">
-                <Wallet className="mr-2 h-4 w-4" />
-                Carteira Virtual
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="glass border-white/10">
-              <DialogHeader>
-                <DialogTitle>Movimentação de Carteira</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <Label>Cliente</Label>
-                  <Select
-                    value={walletForm.clientId}
-                    onValueChange={(v) =>
-                      setWalletForm({ ...walletForm, clientId: v })
-                    }
-                  >
-                    <SelectTrigger className="bg-secondary/50 border-white/10">
-                      <SelectValue placeholder="Selecione o cliente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {activeClients.map((client) => (
-                        <SelectItem
-                          key={client.id}
-                          value={client.id.toString()}
-                        >
-                          {client.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Tipo de Movimentação</Label>
-                  <Select
-                    value={walletForm.type}
-                    onValueChange={(v: "deposit" | "withdrawal") =>
-                      setWalletForm({ ...walletForm, type: v })
-                    }
-                  >
-                    <SelectTrigger className="bg-secondary/50 border-white/10">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="deposit">
-                        Depósito (Entrada)
-                      </SelectItem>
-                      <SelectItem value="withdrawal">
-                        Saque/Gasto (Saída)
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Valor (R$)</Label>
-                  <Input
-                    type="number"
-                    value={walletForm.value}
-                    onChange={(e) =>
-                      setWalletForm({ ...walletForm, value: e.target.value })
-                    }
-                    placeholder="0,00"
-                    className="bg-secondary/50 border-white/10"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Descrição</Label>
-                  <Input
-                    value={walletForm.description}
-                    onChange={(e) =>
-                      setWalletForm({
-                        ...walletForm,
-                        description: e.target.value,
-                      })
-                    }
-                    placeholder="Ex: Meta Ads - Campanha Janeiro"
-                    className="bg-secondary/50 border-white/10"
-                  />
-                </div>
-                <Button
-                  onClick={handleWalletMovement}
-                  className="w-full gradient-primary text-white"
-                >
-                  Registrar Movimentação
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-
           <Dialog open={isTransactionOpen} onOpenChange={setIsTransactionOpen}>
             <DialogTrigger asChild>
               <Button className="gradient-primary text-white shadow-lg glow-primary">
@@ -551,6 +539,173 @@ export default function Financas() {
         </DialogContent>
       </Dialog>
 
+      {/* Modal de Confirmação de Exclusão */}
+      <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <DialogContent className="max-w-md bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-foreground">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Excluir Transação
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {transactionToDelete && (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Você está prestes a excluir a seguinte transação:
+                </p>
+                <div className="rounded-lg bg-secondary/50 p-3 space-y-2">
+                  <p className="font-medium text-foreground">
+                    {transactionToDelete.description}
+                  </p>
+                  <p
+                    className={`text-sm font-semibold ${
+                      transactionToDelete.type === "income"
+                        ? "text-success"
+                        : "text-destructive"
+                    }`}
+                  >
+                    {transactionToDelete.type === "income" ? "+" : "-"}
+                    {formatCurrency(transactionToDelete.value)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatDate(transactionToDelete.date)}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteOpen(false)}
+              className="border-white/10"
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              className="gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Nova Carteira */}
+      <Dialog open={isWalletOpen} onOpenChange={setIsWalletOpen}>
+        <DialogContent className="glass border-white/10">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wallet className="h-5 w-5 text-primary" />
+              Nova Carteira Virtual
+            </DialogTitle>
+            <DialogDescription>
+              Selecione um cliente e faça a primeira movimentação para criar uma
+              carteira virtual.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label>Cliente</Label>
+              <Select
+                value={walletForm.clientId}
+                onValueChange={(v) =>
+                  setWalletForm({ ...walletForm, clientId: v })
+                }
+              >
+                <SelectTrigger className="bg-secondary/50 border-white/10">
+                  <SelectValue placeholder="Selecione um cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {activeClients
+                    .filter((c) => !getWalletByClientId(c.id))
+                    .map((client) => (
+                      <SelectItem key={client.id} value={client.id.toString()}>
+                        {client.name}
+                      </SelectItem>
+                    ))}
+                  {activeClients.filter((c) => !getWalletByClientId(c.id))
+                    .length === 0 && (
+                    <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                      Todos os clientes ativos já possuem carteira
+                    </div>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Tipo de Movimentação</Label>
+              <Select
+                value={walletForm.type}
+                onValueChange={(v: "deposit" | "withdrawal") =>
+                  setWalletForm({ ...walletForm, type: v })
+                }
+              >
+                <SelectTrigger className="bg-secondary/50 border-white/10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="deposit">
+                    <span className="flex items-center gap-2">
+                      <ArrowUpRight className="h-4 w-4 text-success" />
+                      Entrada (Depósito)
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="withdrawal">
+                    <span className="flex items-center gap-2">
+                      <ArrowDownRight className="h-4 w-4 text-destructive" />
+                      Saída (Retirada)
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Valor (R$)</Label>
+              <Input
+                type="number"
+                value={walletForm.value}
+                onChange={(e) =>
+                  setWalletForm({ ...walletForm, value: e.target.value })
+                }
+                placeholder="0,00"
+                className="bg-secondary/50 border-white/10"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Descrição</Label>
+              <Input
+                value={walletForm.description}
+                onChange={(e) =>
+                  setWalletForm({ ...walletForm, description: e.target.value })
+                }
+                placeholder="Ex: Aporte inicial para campanhas"
+                className="bg-secondary/50 border-white/10"
+              />
+            </div>
+            <Button
+              onClick={handleWalletMovement}
+              disabled={
+                !walletForm.clientId ||
+                !walletForm.value ||
+                !walletForm.description
+              }
+              className={`w-full ${walletForm.type === "deposit" ? "bg-success hover:bg-success/90" : "bg-destructive hover:bg-destructive/90"} text-white`}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Criar Carteira
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
@@ -615,11 +770,16 @@ export default function Financas() {
                     : null;
                   const isExpanded = expandedTransactionId === tx.id;
                   return (
-                    <div key={tx.id} className="rounded-lg border border-white/5 overflow-hidden">
+                    <div
+                      key={tx.id}
+                      className="rounded-lg border border-white/5 overflow-hidden"
+                    >
                       {/* Linha principal - clicável para expandir */}
                       <div
                         className={`flex items-center gap-4 p-4 hover:bg-sidebar-accent/50 transition-colors cursor-pointer ${isExpanded ? "bg-sidebar-accent/30" : ""}`}
-                        onClick={() => setExpandedTransactionId(isExpanded ? null : tx.id)}
+                        onClick={() =>
+                          setExpandedTransactionId(isExpanded ? null : tx.id)
+                        }
                       >
                         <div className="text-muted-foreground">
                           {isExpanded ? (
@@ -693,7 +853,9 @@ export default function Financas() {
                               title="Confirmar Pagamento"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                updateTransaction(tx.id, { status: "completed" });
+                                updateTransaction(tx.id, {
+                                  status: "completed",
+                                });
                               }}
                             >
                               <Check className="h-4 w-4" />
@@ -711,9 +873,21 @@ export default function Financas() {
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                            title="Excluir Transação"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteClick(tx);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
-                      
+
                       {/* Detalhes expandidos */}
                       {isExpanded && (
                         <div className="border-t border-white/5 bg-sidebar-accent/20 p-4">
@@ -728,19 +902,31 @@ export default function Financas() {
                               </p>
                             </div>
                             <div className="space-y-1">
-                              <p className="text-xs text-muted-foreground">Tipo</p>
+                              <p className="text-xs text-muted-foreground">
+                                Tipo
+                              </p>
                               <p className="text-sm font-medium text-foreground">
-                                {tx.type === "income" ? "Entrada (Receita)" : "Saída (Despesa)"}
+                                {tx.type === "income"
+                                  ? "Entrada (Receita)"
+                                  : "Saída (Despesa)"}
                               </p>
                             </div>
                             <div className="space-y-1">
-                              <p className="text-xs text-muted-foreground">Categoria</p>
-                              <p className="text-sm font-medium text-foreground">{tx.category}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Categoria
+                              </p>
+                              <p className="text-sm font-medium text-foreground">
+                                {tx.category}
+                              </p>
                             </div>
                             <div className="space-y-1">
-                              <p className="text-xs text-muted-foreground">Status</p>
+                              <p className="text-xs text-muted-foreground">
+                                Status
+                              </p>
                               <p className="text-sm font-medium text-foreground">
-                                {tx.status === "completed" ? "Concluído" : "Pendente"}
+                                {tx.status === "completed"
+                                  ? "Concluído"
+                                  : "Pendente"}
                               </p>
                             </div>
                             {client && (
@@ -749,7 +935,9 @@ export default function Financas() {
                                   <Users className="h-3 w-3" />
                                   Cliente Vinculado
                                 </p>
-                                <p className="text-sm font-medium text-foreground">{client.name}</p>
+                                <p className="text-sm font-medium text-foreground">
+                                  {client.name}
+                                </p>
                               </div>
                             )}
                             {tx.notes && (
@@ -775,94 +963,126 @@ export default function Financas() {
         </TabsContent>
 
         <TabsContent value="wallets">
-          <div className="glass rounded-xl p-6 card-shadow">
-            <div className="flex items-center justify-between mb-6">
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-display font-semibold text-foreground">
                   Carteiras Virtuais dos Clientes
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Controle de saldo para gestão de tráfego
+                  Clique em um card para gerenciar a carteira
                 </p>
               </div>
+              <Button
+                variant="outline"
+                className="border-white/10"
+                onClick={() => setIsWalletOpen(true)}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Nova Carteira
+              </Button>
             </div>
 
             {wallets.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
-                Nenhuma carteira virtual criada. Adicione uma movimentação para
-                um cliente.
-              </p>
+              <div className="glass rounded-xl p-12 card-shadow text-center">
+                <Wallet className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">
+                  Nenhuma carteira virtual criada.
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Adicione uma movimentação para um cliente para criar uma
+                  carteira.
+                </p>
+              </div>
             ) : (
-              <div className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {wallets.map((wallet) => {
                   const client = clients.find((c) => c.id === wallet.clientId);
                   if (!client) return null;
 
+                  const totalDeposits = wallet.movements
+                    .filter((m) => m.type === "deposit")
+                    .reduce((sum, m) => sum + m.value, 0);
+                  const totalWithdrawals = wallet.movements
+                    .filter((m) => m.type === "withdrawal")
+                    .reduce((sum, m) => sum + m.value, 0);
+
                   return (
                     <div
                       key={wallet.id}
-                      className="p-4 rounded-lg bg-secondary/30 border border-white/5"
+                      onClick={() => handleOpenWalletDetail(wallet)}
+                      className="group relative p-5 rounded-xl bg-gradient-to-br from-secondary/50 to-secondary/20 border border-white/10 hover:border-primary/30 transition-all cursor-pointer hover:shadow-lg hover:shadow-primary/5"
                     >
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
-                            <Wallet className="h-5 w-5 text-primary" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-foreground">
-                              {client.name}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              Criada em {formatDate(wallet.createdAt)}
-                            </p>
-                          </div>
+                      {/* Badge de status */}
+                      <div className="absolute top-3 right-3">
+                        <Badge
+                          variant="outline"
+                          className={
+                            wallet.balance > 0
+                              ? "border-success/30 text-success"
+                              : "border-warning/30 text-warning"
+                          }
+                        >
+                          {wallet.balance > 0 ? "Ativa" : "Sem saldo"}
+                        </Badge>
+                      </div>
+
+                      {/* Avatar e nome */}
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center ring-2 ring-primary/20">
+                          <span className="text-lg font-bold text-primary">
+                            {client.name.charAt(0).toUpperCase()}
+                          </span>
                         </div>
-                        <div className="text-right">
-                          <p className="text-lg font-bold text-foreground">
-                            {formatCurrency(wallet.balance)}
+                        <div>
+                          <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                            {client.name}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            Saldo disponível
+                            {wallet.movements.length} movimentações
                           </p>
                         </div>
                       </div>
 
-                      {wallet.movements.length > 0 && (
-                        <div className="border-t border-white/5 pt-3 mt-3">
-                          <p className="text-xs text-muted-foreground mb-2">
-                            Últimas movimentações:
+                      {/* Saldo principal */}
+                      <div className="mb-4">
+                        <p className="text-xs text-muted-foreground mb-1">
+                          Saldo Disponível
+                        </p>
+                        <p
+                          className={`text-2xl font-bold ${wallet.balance >= 0 ? "text-foreground" : "text-destructive"}`}
+                        >
+                          {formatCurrency(wallet.balance)}
+                        </p>
+                      </div>
+
+                      {/* Mini stats */}
+                      <div className="grid grid-cols-2 gap-3 pt-3 border-t border-white/5">
+                        <div>
+                          <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            <ArrowUpRight className="h-3 w-3 text-success" />
+                            Entradas
                           </p>
-                          <div className="space-y-2">
-                            {wallet.movements.slice(0, 3).map((mov) => (
-                              <div
-                                key={mov.id}
-                                className="flex items-center justify-between text-sm"
-                              >
-                                <div className="flex items-center gap-2">
-                                  {mov.type === "deposit" ? (
-                                    <ArrowUpRight className="h-4 w-4 text-success" />
-                                  ) : (
-                                    <ArrowDownRight className="h-4 w-4 text-destructive" />
-                                  )}
-                                  <span className="text-muted-foreground">
-                                    {mov.description}
-                                  </span>
-                                </div>
-                                <span
-                                  className={
-                                    mov.type === "deposit"
-                                      ? "text-success"
-                                      : "text-destructive"
-                                  }
-                                >
-                                  {mov.type === "deposit" ? "+" : "-"}
-                                  {formatCurrency(mov.value)}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
+                          <p className="text-sm font-medium text-success">
+                            {formatCurrency(totalDeposits)}
+                          </p>
                         </div>
-                      )}
+                        <div>
+                          <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            <ArrowDownRight className="h-3 w-3 text-destructive" />
+                            Saídas
+                          </p>
+                          <p className="text-sm font-medium text-destructive">
+                            {formatCurrency(totalWithdrawals)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Indicador de clique */}
+                      <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <ChevronRight className="h-5 w-5 text-primary" />
+                      </div>
                     </div>
                   );
                 })}
@@ -871,6 +1091,203 @@ export default function Financas() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Modal de Detalhes da Carteira */}
+      <Dialog open={isWalletDetailOpen} onOpenChange={setIsWalletDetailOpen}>
+        <DialogContent className="max-w-2xl glass border-white/10">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center">
+                <Wallet className="h-5 w-5 text-primary" />
+              </div>
+              {selectedWallet &&
+                clients.find((c) => c.id === selectedWallet.clientId)?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Gerencie a carteira virtual deste cliente
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedWallet && (
+            <div className="space-y-6 mt-4">
+              {/* Saldo e estatísticas */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="p-4 rounded-lg bg-secondary/30 text-center">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Saldo Atual
+                  </p>
+                  <p
+                    className={`text-xl font-bold ${selectedWallet.balance >= 0 ? "text-foreground" : "text-destructive"}`}
+                  >
+                    {formatCurrency(selectedWallet.balance)}
+                  </p>
+                </div>
+                <div className="p-4 rounded-lg bg-success/10 text-center">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Total Entradas
+                  </p>
+                  <p className="text-xl font-bold text-success">
+                    {formatCurrency(
+                      selectedWallet.movements
+                        .filter((m) => m.type === "deposit")
+                        .reduce((sum, m) => sum + m.value, 0),
+                    )}
+                  </p>
+                </div>
+                <div className="p-4 rounded-lg bg-destructive/10 text-center">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Total Saídas
+                  </p>
+                  <p className="text-xl font-bold text-destructive">
+                    {formatCurrency(
+                      selectedWallet.movements
+                        .filter((m) => m.type === "withdrawal")
+                        .reduce((sum, m) => sum + m.value, 0),
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              {/* Formulário de nova movimentação */}
+              <div className="p-4 rounded-lg bg-secondary/20 border border-white/5">
+                <h4 className="font-medium text-foreground mb-4 flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Nova Movimentação
+                </h4>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Tipo</Label>
+                    <Select
+                      value={walletForm.type}
+                      onValueChange={(v: "deposit" | "withdrawal") =>
+                        setWalletForm({ ...walletForm, type: v })
+                      }
+                    >
+                      <SelectTrigger className="bg-secondary/50 border-white/10">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="deposit">
+                          <span className="flex items-center gap-2">
+                            <ArrowUpRight className="h-4 w-4 text-success" />
+                            Depósito (Entrada)
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="withdrawal">
+                          <span className="flex items-center gap-2">
+                            <ArrowDownRight className="h-4 w-4 text-destructive" />
+                            Saque/Gasto (Saída)
+                          </span>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Valor (R$)</Label>
+                    <Input
+                      type="number"
+                      value={walletForm.value}
+                      onChange={(e) =>
+                        setWalletForm({ ...walletForm, value: e.target.value })
+                      }
+                      placeholder="0,00"
+                      className="bg-secondary/50 border-white/10"
+                    />
+                  </div>
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label>Descrição</Label>
+                    <Input
+                      value={walletForm.description}
+                      onChange={(e) =>
+                        setWalletForm({
+                          ...walletForm,
+                          description: e.target.value,
+                        })
+                      }
+                      placeholder="Ex: Meta Ads - Campanha Janeiro"
+                      className="bg-secondary/50 border-white/10"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <Button
+                      onClick={handleWalletDetailMovement}
+                      className={`w-full ${walletForm.type === "deposit" ? "bg-success hover:bg-success/90" : "bg-destructive hover:bg-destructive/90"} text-white`}
+                    >
+                      {walletForm.type === "deposit" ? (
+                        <>
+                          <ArrowUpRight className="mr-2 h-4 w-4" />
+                          Registrar Entrada
+                        </>
+                      ) : (
+                        <>
+                          <ArrowDownRight className="mr-2 h-4 w-4" />
+                          Registrar Saída
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Histórico de movimentações */}
+              <div>
+                <h4 className="font-medium text-foreground mb-3 flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Histórico de Movimentações
+                </h4>
+                {selectedWallet.movements.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-4 text-sm">
+                    Nenhuma movimentação registrada
+                  </p>
+                ) : (
+                  <div className="space-y-2 max-h-[250px] overflow-y-auto pr-2">
+                    {selectedWallet.movements.map((mov) => (
+                      <div
+                        key={mov.id}
+                        className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 border border-white/5"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                              mov.type === "deposit"
+                                ? "bg-success/10"
+                                : "bg-destructive/10"
+                            }`}
+                          >
+                            {mov.type === "deposit" ? (
+                              <ArrowUpRight className="h-4 w-4 text-success" />
+                            ) : (
+                              <ArrowDownRight className="h-4 w-4 text-destructive" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-foreground">
+                              {mov.description}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatDate(mov.date)}
+                            </p>
+                          </div>
+                        </div>
+                        <p
+                          className={`font-semibold ${
+                            mov.type === "deposit"
+                              ? "text-success"
+                              : "text-destructive"
+                          }`}
+                        >
+                          {mov.type === "deposit" ? "+" : "-"}
+                          {formatCurrency(mov.value)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -101,8 +101,14 @@ const originLabels: Record<string, string> = {
 
 export default function Clientes() {
   const navigate = useNavigate();
-  const { clients, addClient, updateClient, deleteClient, getLeadByClientId } =
-    useData();
+  const {
+    clients,
+    addClient,
+    updateClient,
+    deleteClient,
+    getLeadByClientId,
+    addActivity,
+  } = useData();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<ClientStatus | "all">("all");
@@ -225,6 +231,13 @@ export default function Clientes() {
             notes: formData.analysisNotes,
           }
         : undefined,
+    });
+
+    // Criar atividade de novo cliente
+    addActivity({
+      type: "client",
+      title: "Novo Cliente",
+      description: formData.name,
     });
 
     setIsDialogOpen(false);

@@ -39,7 +39,7 @@ const originOptions: {
 ];
 
 export default function CadastroPublico() {
-  const { addLead } = useData();
+  const { addLead, addActivity } = useData();
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -74,6 +74,13 @@ export default function CadastroPublico() {
       },
       true,
     ); // true = selfRegistered
+
+    // Criar atividade de novo lead auto-cadastrado
+    addActivity({
+      type: "lead",
+      title: "Novo Lead!",
+      description: `${formData.name}${formData.company ? ` - ${formData.company}` : ""} se cadastrou`,
+    });
 
     setIsSubmitted(true);
   };

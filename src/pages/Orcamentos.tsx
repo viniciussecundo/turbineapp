@@ -57,6 +57,7 @@ export default function Orcamentos() {
     updateBudgetStatus,
     transactions,
     getWalletByClientId,
+    addActivity,
   } = useData();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -191,6 +192,7 @@ export default function Orcamentos() {
     if (!validateForm()) return;
 
     const validItems = formData.items.filter((item) => item.description.trim());
+    const client = clients.find((c) => c.id === parseInt(formData.clientId));
 
     addBudget({
       clientId: parseInt(formData.clientId),
@@ -201,6 +203,13 @@ export default function Orcamentos() {
       status: "draft",
       validUntil: formData.validUntil,
       notes: formData.notes || undefined,
+    });
+
+    // Criar atividade de novo orçamento
+    addActivity({
+      type: "budget",
+      title: "Novo Orçamento",
+      description: `${formData.title} - ${client?.name || "Cliente"}`,
     });
 
     setIsDialogOpen(false);

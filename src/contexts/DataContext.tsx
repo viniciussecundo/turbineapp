@@ -30,6 +30,7 @@ export interface Lead {
   notes?: string;
   convertedToClientId?: number;
   selfRegistered?: boolean; // true se o lead se cadastrou pelo link público
+  viewed?: boolean; // true se o lead auto-cadastrado foi visualizado
   // Dados para gestão de tráfego
   followers?: number; // número de seguidores
   posts?: number; // número de posts
@@ -219,6 +220,27 @@ const initialTransactions: Transaction[] = [];
 // Carteiras virtuais iniciais - vazio para começar do zero
 const initialWallets: ClientWallet[] = [];
 
+// Sistema de Atividades/Notificações
+export type ActivityType =
+  | "lead"
+  | "client"
+  | "transaction"
+  | "budget"
+  | "wallet";
+
+export interface Activity {
+  id: number;
+  type: ActivityType;
+  title: string;
+  description: string;
+  timestamp: string;
+  read: boolean;
+  icon?: string;
+  link?: string;
+}
+
+const ACTIVITIES_STORAGE_KEY = "turbine_activities";
+
 // Context Interface
 interface DataContextType {
   // Leads
@@ -228,6 +250,9 @@ interface DataContextType {
     selfRegistered?: boolean,
   ) => void;
   updateLeadStatus: (leadId: number, status: LeadStatus) => void;
+  markLeadAsViewed: (leadId: number) => void;
+  markAllLeadsAsViewed: () => void;
+  getUnviewedLeadsCount: () => number;
   deleteLead: (leadId: number) => boolean;
   convertLeadToClient: (
     leadId: number,
@@ -294,6 +319,14 @@ interface DataContextType {
         } | null;
       })
     | null;
+
+  // Atividades/Notificações
+  activities: Activity[];
+  addActivity: (activity: Omit<Activity, "id" | "timestamp" | "read">) => void;
+  markActivityAsRead: (activityId: number) => void;
+  markAllActivitiesAsRead: () => void;
+  clearActivities: () => void;
+  getUnreadActivitiesCount: () => number;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -339,6 +372,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [budgets, setBudgets] = useState<Budget[]>(() =>
     loadFromStorage(BUDGETS_STORAGE_KEY, initialBudgets),
   );
+  const [activities, setActivities] = useState<Activity[]>(() =>
+    loadFromStorage(ACTIVITIES_STORAGE_KEY, []),
+  );
 
   // Salvar no LocalStorage quando os dados mudarem
   useEffect(() => {
@@ -360,6 +396,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     saveToStorage(BUDGETS_STORAGE_KEY, budgets);
   }, [budgets]);
+
+  useEffect(() => {
+    saveToStorage(ACTIVITIES_STORAGE_KEY, activities);
+  }, [activities]);
 
   // ========================================
   // VALIDAÇÃO DE CONSISTÊNCIA LEAD-CLIENTE
@@ -442,6 +482,26 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setLeads(
       leads.map((lead) => (lead.id === leadId ? { ...lead, status } : lead)),
     );
+  };
+
+  const markLeadAsViewed = (leadId: number) => {
+    setLeads(
+      leads.map((lead) =>
+        lead.id === leadId ? { ...lead, viewed: true } : lead,
+      ),
+    );
+  };
+
+  const markAllLeadsAsViewed = () => {
+    setLeads(
+      leads.map((lead) =>
+        lead.selfRegistered && !lead.viewed ? { ...lead, viewed: true } : lead,
+      ),
+    );
+  };
+
+  const getUnviewedLeadsCount = () => {
+    return leads.filter((lead) => lead.selfRegistered && !lead.viewed).length;
   };
 
   const deleteLead = (leadId: number): boolean => {
@@ -751,6 +811,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const deleteBudget = (budgetId: number): boolean => {
     const budget = budgets.find((b) => b.id === budgetId);
     if (!budget) return false;
+
+    // Remover transações vinculadas a este orçamento
+    setTransactions(transactions.filter((t) => t.budgetId !== budgetId));
+
+    // Remover o orçamento
     setBudgets(budgets.filter((b) => b.id !== budgetId));
     return true;
   };
@@ -826,12 +891,52 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return budgets.filter((b) => b.clientId === clientId);
   };
 
+  // ========================================
+  // FUNÇÕES DE ATIVIDADES/NOTIFICAÇÕES
+  // ========================================
+  const addActivity = (
+    activityData: Omit<Activity, "id" | "timestamp" | "read">,
+  ) => {
+    const newActivity: Activity = {
+      ...activityData,
+      id:
+        activities.length > 0
+          ? Math.max(...activities.map((a) => a.id)) + 1
+          : 1,
+      timestamp: new Date().toISOString(),
+      read: false,
+    };
+    // Manter apenas as últimas 50 atividades
+    setActivities((prev) => [newActivity, ...prev].slice(0, 50));
+  };
+
+  const markActivityAsRead = (activityId: number) => {
+    setActivities(
+      activities.map((a) => (a.id === activityId ? { ...a, read: true } : a)),
+    );
+  };
+
+  const markAllActivitiesAsRead = () => {
+    setActivities(activities.map((a) => ({ ...a, read: true })));
+  };
+
+  const clearActivities = () => {
+    setActivities([]);
+  };
+
+  const getUnreadActivitiesCount = () => {
+    return activities.filter((a) => !a.read).length;
+  };
+
   return (
     <DataContext.Provider
       value={{
         leads,
         addLead,
         updateLeadStatus,
+        markLeadAsViewed,
+        markAllLeadsAsViewed,
+        getUnviewedLeadsCount,
         deleteLead,
         convertLeadToClient,
         clients,
@@ -859,6 +964,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
         getLeadByClientId,
         getClientByLeadId,
         getClientWithLeadData,
+        activities,
+        addActivity,
+        markActivityAsRead,
+        markAllActivitiesAsRead,
+        clearActivities,
+        getUnreadActivitiesCount,
       }}
     >
       {children}

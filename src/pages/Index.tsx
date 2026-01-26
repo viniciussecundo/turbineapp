@@ -3,7 +3,6 @@ import { DollarSign, TrendingDown, Wallet, TrendingUp } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { RevenueChart } from "@/components/dashboard/RevenueChart";
 import { FeaturedClients } from "@/components/dashboard/FeaturedClients";
-import { PendingTasks } from "@/components/dashboard/PendingTasks";
 import { CommercialAlerts } from "@/components/dashboard/CommercialAlerts";
 import { useData } from "@/contexts/DataContext";
 
@@ -199,9 +198,6 @@ export default function Dashboard() {
 
       {/* Commercial Alerts */}
       <CommercialAlerts />
-
-      {/* Pending Tasks - Full Width */}
-      <PendingTasks />
     </div>
   );
 }
