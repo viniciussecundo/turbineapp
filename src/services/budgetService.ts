@@ -1,85 +1,195 @@
 // ========================================
-// Serviço de Orçamentos
-// Preparado para futura migração para API
+// Serviço de Orçamentos - Supabase
 // ========================================
 
-import type { Budget, BudgetStatus } from "@/contexts/DataContext";
-import { storage, STORAGE_KEYS } from "./storage";
+import { supabase } from "@/lib/supabase";
+import type { Budget, BudgetStatus, BudgetItem } from "@/contexts/DataContext";
 
-const KEY = STORAGE_KEYS.BUDGETS;
+// Mapeamento de campos (camelCase para snake_case)
+const toDbBudget = (budget: Partial<Budget>): Record<string, unknown> => ({
+  code: budget.code,
+  client_id: budget.clientId,
+  title: budget.title,
+  description: budget.description || null,
+  items: budget.items || [],
+  total_value: budget.totalValue,
+  status: budget.status,
+  created_at: budget.createdAt,
+  valid_until: budget.validUntil,
+  sent_at: budget.sentAt || null,
+  approved_at: budget.approvedAt || null,
+  rejected_at: budget.rejectedAt || null,
+  notes: budget.notes || null,
+});
+
+const fromDbBudget = (dbBudget: Record<string, unknown>): Budget => ({
+  id: dbBudget.id as number,
+  code: dbBudget.code as string,
+  clientId: dbBudget.client_id as number,
+  title: dbBudget.title as string,
+  description: dbBudget.description as string | undefined,
+  items: dbBudget.items as BudgetItem[],
+  totalValue: dbBudget.total_value as number,
+  status: dbBudget.status as BudgetStatus,
+  createdAt: dbBudget.created_at as string,
+  validUntil: dbBudget.valid_until as string,
+  sentAt: dbBudget.sent_at as string | undefined,
+  approvedAt: dbBudget.approved_at as string | undefined,
+  rejectedAt: dbBudget.rejected_at as string | undefined,
+  notes: dbBudget.notes as string | undefined,
+});
 
 export const budgetService = {
   /**
    * Busca todos os orçamentos
-   * Futuro: GET /api/budgets
    */
-  getAll(): Budget[] {
-    return storage.get<Budget>(KEY);
+  async getAll(): Promise<Budget[]> {
+    const { data, error } = await supabase
+      .from("budgets")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Erro ao buscar orçamentos:", error);
+      return [];
+    }
+
+    return (data || []).map(fromDbBudget);
   },
 
   /**
    * Busca orçamento por ID
-   * Futuro: GET /api/budgets/:id
    */
-  getById(id: number): Budget | undefined {
-    const budgets = this.getAll();
-    return budgets.find((budget) => budget.id === id);
+  async getById(id: number): Promise<Budget | null> {
+    const { data, error } = await supabase
+      .from("budgets")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) {
+      console.error("Erro ao buscar orçamento:", error);
+      return null;
+    }
+
+    return data ? fromDbBudget(data) : null;
   },
 
   /**
    * Busca orçamentos por cliente
-   * Futuro: GET /api/budgets?clientId=:clientId
    */
-  getByClientId(clientId: number): Budget[] {
-    const budgets = this.getAll();
-    return budgets.filter((budget) => budget.clientId === clientId);
+  async getByClientId(clientId: number): Promise<Budget[]> {
+    const { data, error } = await supabase
+      .from("budgets")
+      .select("*")
+      .eq("client_id", clientId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Erro ao buscar orçamentos do cliente:", error);
+      return [];
+    }
+
+    return (data || []).map(fromDbBudget);
   },
 
   /**
    * Busca orçamentos por status
-   * Futuro: GET /api/budgets?status=:status
    */
-  getByStatus(status: BudgetStatus): Budget[] {
-    const budgets = this.getAll();
-    return budgets.filter((budget) => budget.status === status);
+  async getByStatus(status: BudgetStatus): Promise<Budget[]> {
+    const { data, error } = await supabase
+      .from("budgets")
+      .select("*")
+      .eq("status", status)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Erro ao buscar orçamentos por status:", error);
+      return [];
+    }
+
+    return (data || []).map(fromDbBudget);
+  },
+
+  /**
+   * Gera próximo código de orçamento
+   */
+  async generateCode(): Promise<string> {
+    const { count, error } = await supabase
+      .from("budgets")
+      .select("*", { count: "exact", head: true });
+
+    if (error) {
+      console.error("Erro ao gerar código:", error);
+      return `ORC-${Date.now()}`;
+    }
+
+    const nextNumber = (count || 0) + 1;
+    return `ORC-${String(nextNumber).padStart(3, "0")}`;
   },
 
   /**
    * Cria novo orçamento
-   * Futuro: POST /api/budgets
    */
-  create(budget: Omit<Budget, "id" | "code" | "createdAt">): Budget {
-    const budgets = this.getAll();
-    const nextNumber = budgets.length + 1;
-    const newBudget: Budget = {
+  async create(
+    budget: Omit<Budget, "id" | "code" | "createdAt">,
+  ): Promise<Budget | null> {
+    const code = await this.generateCode();
+    const dbData = toDbBudget({
       ...budget,
-      id: Date.now(),
-      code: `ORC-${String(nextNumber).padStart(3, "0")}`,
+      code,
       createdAt: new Date().toISOString().split("T")[0],
-    };
-    storage.set(KEY, [...budgets, newBudget]);
-    return newBudget;
+    });
+
+    // Remove campos undefined
+    Object.keys(dbData).forEach((key) => {
+      if (dbData[key] === undefined) delete dbData[key];
+    });
+
+    const { data, error } = await supabase
+      .from("budgets")
+      .insert(dbData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Erro ao criar orçamento:", error);
+      return null;
+    }
+
+    return data ? fromDbBudget(data) : null;
   },
 
   /**
    * Atualiza orçamento
-   * Futuro: PUT /api/budgets/:id
    */
-  update(id: number, data: Partial<Budget>): Budget | null {
-    const budgets = this.getAll();
-    const index = budgets.findIndex((budget) => budget.id === id);
-    if (index === -1) return null;
+  async update(id: number, data: Partial<Budget>): Promise<Budget | null> {
+    const dbData = toDbBudget(data);
 
-    budgets[index] = { ...budgets[index], ...data };
-    storage.set(KEY, budgets);
-    return budgets[index];
+    // Remove campos undefined
+    Object.keys(dbData).forEach((key) => {
+      if (dbData[key] === undefined) delete dbData[key];
+    });
+
+    const { data: updated, error } = await supabase
+      .from("budgets")
+      .update(dbData)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Erro ao atualizar orçamento:", error);
+      return null;
+    }
+
+    return updated ? fromDbBudget(updated) : null;
   },
 
   /**
    * Atualiza status do orçamento
-   * Futuro: PATCH /api/budgets/:id/status
    */
-  updateStatus(id: number, status: BudgetStatus): Budget | null {
+  async updateStatus(id: number, status: BudgetStatus): Promise<Budget | null> {
     const now = new Date().toISOString().split("T")[0];
     const updates: Partial<Budget> = { status };
 
@@ -92,18 +202,16 @@ export const budgetService = {
 
   /**
    * Remove orçamento
-   * Futuro: DELETE /api/budgets/:id
    */
-  delete(id: number): boolean {
-    return storage.remove(KEY, id);
-  },
+  async delete(id: number): Promise<boolean> {
+    const { error } = await supabase.from("budgets").delete().eq("id", id);
 
-  /**
-   * Salva lista completa de orçamentos (sync)
-   * Usado pelo DataContext para manter compatibilidade
-   */
-  saveAll(budgets: Budget[]): boolean {
-    return storage.set(KEY, budgets);
+    if (error) {
+      console.error("Erro ao remover orçamento:", error);
+      return false;
+    }
+
+    return true;
   },
 };
 

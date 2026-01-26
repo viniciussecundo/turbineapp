@@ -1,103 +1,228 @@
 // ========================================
-// Serviço de Transações (Finanças)
-// Preparado para futura migração para API
+// Serviço de Transações - Supabase
 // ========================================
 
+import { supabase } from "@/lib/supabase";
 import type {
   Transaction,
   TransactionStatus,
   TransactionType,
 } from "@/contexts/DataContext";
-import { storage, STORAGE_KEYS } from "./storage";
 
-const KEY = STORAGE_KEYS.TRANSACTIONS;
+// Mapeamento de campos (camelCase para snake_case)
+const toDbTransaction = (
+  transaction: Partial<Transaction>,
+): Record<string, unknown> => ({
+  type: transaction.type,
+  description: transaction.description,
+  value: transaction.value,
+  date: transaction.date,
+  category: transaction.category,
+  status: transaction.status,
+  client_id: transaction.clientId || null,
+  budget_id: transaction.budgetId || null,
+  notes: transaction.notes || null,
+});
+
+const fromDbTransaction = (
+  dbTransaction: Record<string, unknown>,
+): Transaction => ({
+  id: dbTransaction.id as number,
+  type: dbTransaction.type as TransactionType,
+  description: dbTransaction.description as string,
+  value: dbTransaction.value as number,
+  date: dbTransaction.date as string,
+  category: dbTransaction.category as string,
+  status: dbTransaction.status as TransactionStatus,
+  clientId: dbTransaction.client_id as number | undefined,
+  budgetId: dbTransaction.budget_id as number | undefined,
+  notes: dbTransaction.notes as string | undefined,
+});
 
 export const transactionService = {
   /**
    * Busca todas as transações
-   * Futuro: GET /api/transactions
    */
-  getAll(): Transaction[] {
-    return storage.get<Transaction>(KEY);
+  async getAll(): Promise<Transaction[]> {
+    const { data, error } = await supabase
+      .from("transactions")
+      .select("*")
+      .order("date", { ascending: false });
+
+    if (error) {
+      console.error("Erro ao buscar transações:", error);
+      return [];
+    }
+
+    return (data || []).map(fromDbTransaction);
   },
 
   /**
    * Busca transação por ID
-   * Futuro: GET /api/transactions/:id
    */
-  getById(id: number): Transaction | undefined {
-    const transactions = this.getAll();
-    return transactions.find((t) => t.id === id);
+  async getById(id: number): Promise<Transaction | null> {
+    const { data, error } = await supabase
+      .from("transactions")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) {
+      console.error("Erro ao buscar transação:", error);
+      return null;
+    }
+
+    return data ? fromDbTransaction(data) : null;
   },
 
   /**
    * Busca transações por cliente
-   * Futuro: GET /api/transactions?clientId=:clientId
    */
-  getByClientId(clientId: number): Transaction[] {
-    const transactions = this.getAll();
-    return transactions.filter((t) => t.clientId === clientId);
+  async getByClientId(clientId: number): Promise<Transaction[]> {
+    const { data, error } = await supabase
+      .from("transactions")
+      .select("*")
+      .eq("client_id", clientId)
+      .order("date", { ascending: false });
+
+    if (error) {
+      console.error("Erro ao buscar transações do cliente:", error);
+      return [];
+    }
+
+    return (data || []).map(fromDbTransaction);
   },
 
   /**
    * Busca transações por tipo
-   * Futuro: GET /api/transactions?type=:type
    */
-  getByType(type: TransactionType): Transaction[] {
-    const transactions = this.getAll();
-    return transactions.filter((t) => t.type === type);
+  async getByType(type: TransactionType): Promise<Transaction[]> {
+    const { data, error } = await supabase
+      .from("transactions")
+      .select("*")
+      .eq("type", type)
+      .order("date", { ascending: false });
+
+    if (error) {
+      console.error("Erro ao buscar transações por tipo:", error);
+      return [];
+    }
+
+    return (data || []).map(fromDbTransaction);
   },
 
   /**
    * Cria nova transação
-   * Futuro: POST /api/transactions
    */
-  create(transaction: Omit<Transaction, "id">): Transaction {
-    const transactions = this.getAll();
-    const newTransaction: Transaction = {
-      ...transaction,
-      id: Date.now(),
-    };
-    storage.set(KEY, [...transactions, newTransaction]);
-    return newTransaction;
+  async create(
+    transaction: Omit<Transaction, "id">,
+  ): Promise<Transaction | null> {
+    const dbData = toDbTransaction(transaction);
+
+    // Remove campos undefined
+    Object.keys(dbData).forEach((key) => {
+      if (dbData[key] === undefined) delete dbData[key];
+    });
+
+    const { data, error } = await supabase
+      .from("transactions")
+      .insert(dbData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Erro ao criar transação:", error);
+      return null;
+    }
+
+    return data ? fromDbTransaction(data) : null;
   },
 
   /**
    * Atualiza transação
-   * Futuro: PUT /api/transactions/:id
    */
-  update(id: number, data: Partial<Transaction>): Transaction | null {
-    const transactions = this.getAll();
-    const index = transactions.findIndex((t) => t.id === id);
-    if (index === -1) return null;
+  async update(
+    id: number,
+    data: Partial<Transaction>,
+  ): Promise<Transaction | null> {
+    const dbData = toDbTransaction(data);
 
-    transactions[index] = { ...transactions[index], ...data };
-    storage.set(KEY, transactions);
-    return transactions[index];
+    // Remove campos undefined
+    Object.keys(dbData).forEach((key) => {
+      if (dbData[key] === undefined) delete dbData[key];
+    });
+
+    const { data: updated, error } = await supabase
+      .from("transactions")
+      .update(dbData)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Erro ao atualizar transação:", error);
+      return null;
+    }
+
+    return updated ? fromDbTransaction(updated) : null;
   },
 
   /**
    * Atualiza status da transação
-   * Futuro: PATCH /api/transactions/:id/status
    */
-  updateStatus(id: number, status: TransactionStatus): Transaction | null {
+  async updateStatus(
+    id: number,
+    status: TransactionStatus,
+  ): Promise<Transaction | null> {
     return this.update(id, { status });
   },
 
   /**
    * Remove transação
-   * Futuro: DELETE /api/transactions/:id
    */
-  delete(id: number): boolean {
-    return storage.remove(KEY, id);
+  async delete(id: number): Promise<boolean> {
+    const { error } = await supabase.from("transactions").delete().eq("id", id);
+
+    if (error) {
+      console.error("Erro ao remover transação:", error);
+      return false;
+    }
+
+    return true;
   },
 
   /**
-   * Salva lista completa de transações (sync)
-   * Usado pelo DataContext para manter compatibilidade
+   * Remove transações por budgetId
    */
-  saveAll(transactions: Transaction[]): boolean {
-    return storage.set(KEY, transactions);
+  async deleteByBudgetId(budgetId: number): Promise<boolean> {
+    const { error } = await supabase
+      .from("transactions")
+      .delete()
+      .eq("budget_id", budgetId);
+
+    if (error) {
+      console.error("Erro ao remover transações do orçamento:", error);
+      return false;
+    }
+
+    return true;
+  },
+
+  /**
+   * Calcula totais (income, expense)
+   */
+  async getTotals(): Promise<{ income: number; expense: number }> {
+    const transactions = await this.getAll();
+
+    const income = transactions
+      .filter((t) => t.type === "income" && t.status === "completed")
+      .reduce((sum, t) => sum + t.value, 0);
+
+    const expense = transactions
+      .filter((t) => t.type === "expense" && t.status === "completed")
+      .reduce((sum, t) => sum + t.value, 0);
+
+    return { income, expense };
   },
 };
 

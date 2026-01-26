@@ -1,111 +1,263 @@
 // ========================================
-// Serviço de Carteira Virtual
-// Preparado para futura migração para API
+// Serviço de Carteira Virtual - Supabase
 // ========================================
 
+import { supabase } from "@/lib/supabase";
 import type { ClientWallet, WalletMovement } from "@/contexts/DataContext";
-import { storage, STORAGE_KEYS } from "./storage";
 
-const KEY = STORAGE_KEYS.WALLETS;
+// Mapeamento de campos para Wallet
+const fromDbWallet = (
+  dbWallet: Record<string, unknown>,
+  movements: WalletMovement[] = [],
+): ClientWallet => ({
+  id: dbWallet.id as number,
+  clientId: dbWallet.client_id as number,
+  balance: Number(dbWallet.balance) || 0,
+  createdAt: dbWallet.created_at as string,
+  movements,
+});
+
+// Mapeamento de campos para Movement
+const fromDbMovement = (
+  dbMovement: Record<string, unknown>,
+): WalletMovement => ({
+  id: dbMovement.id as number,
+  type: dbMovement.type as WalletMovement["type"],
+  value: Number(dbMovement.value) || 0,
+  date: dbMovement.date as string,
+  description: dbMovement.description as string,
+});
 
 export const walletService = {
   /**
-   * Busca todas as carteiras
-   * Futuro: GET /api/wallets
+   * Busca todas as carteiras com movimentações
    */
-  getAll(): ClientWallet[] {
-    return storage.get<ClientWallet>(KEY);
+  async getAll(): Promise<ClientWallet[]> {
+    const { data: wallets, error: walletsError } = await supabase
+      .from("wallets")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (walletsError) {
+      console.error("Erro ao buscar carteiras:", walletsError);
+      return [];
+    }
+
+    if (!wallets || wallets.length === 0) return [];
+
+    // Buscar todas as movimentações
+    const walletIds = wallets.map((w) => w.id);
+    const { data: movements, error: movementsError } = await supabase
+      .from("wallet_movements")
+      .select("*")
+      .in("wallet_id", walletIds)
+      .order("date", { ascending: false });
+
+    if (movementsError) {
+      console.error("Erro ao buscar movimentações:", movementsError);
+    }
+
+    // Agrupar movimentações por carteira
+    const movementsByWallet = (movements || []).reduce(
+      (acc, mov) => {
+        const walletId = mov.wallet_id as number;
+        if (!acc[walletId]) acc[walletId] = [];
+        acc[walletId].push(fromDbMovement(mov));
+        return acc;
+      },
+      {} as Record<number, WalletMovement[]>,
+    );
+
+    return wallets.map((w) =>
+      fromDbWallet(w, movementsByWallet[w.id as number] || []),
+    );
   },
 
   /**
-   * Busca carteira por ID
-   * Futuro: GET /api/wallets/:id
+   * Busca carteira por ID com movimentações
    */
-  getById(id: number): ClientWallet | undefined {
-    const wallets = this.getAll();
-    return wallets.find((w) => w.id === id);
+  async getById(id: number): Promise<ClientWallet | null> {
+    const { data: wallet, error: walletError } = await supabase
+      .from("wallets")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (walletError) {
+      console.error("Erro ao buscar carteira:", walletError);
+      return null;
+    }
+
+    if (!wallet) return null;
+
+    // Buscar movimentações
+    const { data: movements, error: movementsError } = await supabase
+      .from("wallet_movements")
+      .select("*")
+      .eq("wallet_id", id)
+      .order("date", { ascending: false });
+
+    if (movementsError) {
+      console.error("Erro ao buscar movimentações:", movementsError);
+    }
+
+    return fromDbWallet(wallet, (movements || []).map(fromDbMovement));
   },
 
   /**
-   * Busca carteira por cliente
-   * Futuro: GET /api/wallets?clientId=:clientId
+   * Busca carteira por cliente com movimentações
    */
-  getByClientId(clientId: number): ClientWallet | undefined {
-    const wallets = this.getAll();
-    return wallets.find((w) => w.clientId === clientId);
+  async getByClientId(clientId: number): Promise<ClientWallet | null> {
+    const { data: wallet, error: walletError } = await supabase
+      .from("wallets")
+      .select("*")
+      .eq("client_id", clientId)
+      .single();
+
+    if (walletError && walletError.code !== "PGRST116") {
+      console.error("Erro ao buscar carteira do cliente:", walletError);
+      return null;
+    }
+
+    if (!wallet) return null;
+
+    // Buscar movimentações
+    const { data: movements, error: movementsError } = await supabase
+      .from("wallet_movements")
+      .select("*")
+      .eq("wallet_id", wallet.id)
+      .order("date", { ascending: false });
+
+    if (movementsError) {
+      console.error("Erro ao buscar movimentações:", movementsError);
+    }
+
+    return fromDbWallet(wallet, (movements || []).map(fromDbMovement));
   },
 
   /**
    * Cria nova carteira
-   * Futuro: POST /api/wallets
    */
-  create(clientId: number, initialBalance = 0): ClientWallet {
-    const wallets = this.getAll();
-    const newWallet: ClientWallet = {
-      id: Date.now(),
-      clientId,
-      balance: initialBalance,
-      movements: [],
-      createdAt: new Date().toISOString().split("T")[0],
-    };
-    storage.set(KEY, [...wallets, newWallet]);
-    return newWallet;
+  async create(
+    clientId: number,
+    initialBalance = 0,
+    initialMovement?: Omit<WalletMovement, "id">,
+  ): Promise<ClientWallet | null> {
+    // Verificar se já existe
+    const existing = await this.getByClientId(clientId);
+    if (existing) return existing;
+
+    // Criar carteira (com saldo 0 inicialmente, será atualizado pelo trigger)
+    const { data: wallet, error: walletError } = await supabase
+      .from("wallets")
+      .insert({
+        client_id: clientId,
+        balance: 0,
+        created_at: new Date().toISOString().split("T")[0],
+      })
+      .select()
+      .single();
+
+    if (walletError) {
+      console.error("Erro ao criar carteira:", walletError);
+      return null;
+    }
+
+    if (!wallet) return null;
+
+    // Criar movimento inicial se fornecido
+    if (initialMovement) {
+      const { error: movError } = await supabase
+        .from("wallet_movements")
+        .insert({
+          wallet_id: wallet.id,
+          type: initialMovement.type,
+          value: initialMovement.value,
+          date: initialMovement.date,
+          description: initialMovement.description,
+        });
+
+      if (movError) {
+        console.error("Erro ao criar movimento inicial:", movError);
+      }
+    } else if (initialBalance > 0) {
+      // Criar depósito inicial
+      const { error: movError } = await supabase
+        .from("wallet_movements")
+        .insert({
+          wallet_id: wallet.id,
+          type: "deposit",
+          value: initialBalance,
+          date: new Date().toISOString().split("T")[0],
+          description: "Depósito inicial",
+        });
+
+      if (movError) {
+        console.error("Erro ao criar depósito inicial:", movError);
+      }
+    }
+
+    // Retornar carteira atualizada
+    return this.getById(wallet.id as number);
   },
 
   /**
    * Adiciona movimentação na carteira
-   * Futuro: POST /api/wallets/:id/movements
    */
-  addMovement(
+  async addMovement(
     walletId: number,
     movement: Omit<WalletMovement, "id">,
-  ): ClientWallet | null {
-    const wallets = this.getAll();
-    const index = wallets.findIndex((w) => w.id === walletId);
-    if (index === -1) return null;
+  ): Promise<ClientWallet | null> {
+    const { error } = await supabase.from("wallet_movements").insert({
+      wallet_id: walletId,
+      type: movement.type,
+      value: movement.value,
+      date: movement.date,
+      description: movement.description,
+    });
 
-    const newMovement: WalletMovement = {
-      ...movement,
-      id: Date.now(),
-    };
+    if (error) {
+      console.error("Erro ao adicionar movimentação:", error);
+      return null;
+    }
 
-    const wallet = wallets[index];
-    wallet.movements.push(newMovement);
-    wallet.balance +=
-      movement.type === "deposit" ? movement.value : -movement.value;
-
-    storage.set(KEY, wallets);
-    return wallet;
+    // Retornar carteira atualizada (o trigger já atualizou o saldo)
+    return this.getById(walletId);
   },
 
   /**
-   * Atualiza saldo da carteira
-   * Futuro: PATCH /api/wallets/:id/balance
+   * Atualiza saldo da carteira manualmente
    */
-  updateBalance(id: number, balance: number): ClientWallet | null {
-    const wallets = this.getAll();
-    const index = wallets.findIndex((w) => w.id === id);
-    if (index === -1) return null;
+  async updateBalance(
+    id: number,
+    balance: number,
+  ): Promise<ClientWallet | null> {
+    const { error } = await supabase
+      .from("wallets")
+      .update({ balance })
+      .eq("id", id);
 
-    wallets[index].balance = balance;
-    storage.set(KEY, wallets);
-    return wallets[index];
+    if (error) {
+      console.error("Erro ao atualizar saldo:", error);
+      return null;
+    }
+
+    return this.getById(id);
   },
 
   /**
    * Remove carteira
-   * Futuro: DELETE /api/wallets/:id
    */
-  delete(id: number): boolean {
-    return storage.remove(KEY, id);
-  },
+  async delete(id: number): Promise<boolean> {
+    // Movimentações são removidas em cascata
+    const { error } = await supabase.from("wallets").delete().eq("id", id);
 
-  /**
-   * Salva lista completa de carteiras (sync)
-   * Usado pelo DataContext para manter compatibilidade
-   */
-  saveAll(wallets: ClientWallet[]): boolean {
-    return storage.set(KEY, wallets);
+    if (error) {
+      console.error("Erro ao remover carteira:", error);
+      return false;
+    }
+
+    return true;
   },
 };
 

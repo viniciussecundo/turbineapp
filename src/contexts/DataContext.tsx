@@ -4,7 +4,15 @@ import {
   useState,
   useEffect,
   ReactNode,
+  useCallback,
 } from "react";
+
+import { leadService } from "@/services/leadService";
+import { clientService } from "@/services/clientService";
+import { transactionService } from "@/services/transactionService";
+import { walletService } from "@/services/walletService";
+import { budgetService } from "@/services/budgetService";
+import { activityService } from "@/services/activityService";
 
 // Types
 export type LeadStatus = "novo" | "contato" | "proposta" | "fechado";
@@ -29,17 +37,15 @@ export interface Lead {
   createdAt: string;
   notes?: string;
   convertedToClientId?: number;
-  selfRegistered?: boolean; // true se o lead se cadastrou pelo link público
-  viewed?: boolean; // true se o lead auto-cadastrado foi visualizado
-  // Dados para gestão de tráfego
-  followers?: number; // número de seguidores
-  posts?: number; // número de posts
-  monthlyBudget?: number; // orçamento mensal para gestão de tráfego
+  selfRegistered?: boolean;
+  viewed?: boolean;
+  followers?: number;
+  posts?: number;
+  monthlyBudget?: number;
 }
 
 // ========================================
 // ANÁLISE DE PERFIL DO CLIENTE
-// Adicione/remova campos conforme necessário
 // ========================================
 export type ClientGoal = "sales" | "engagement" | "branding" | "leads";
 
@@ -66,13 +72,12 @@ export const CLIENT_SEGMENTS = [
 ] as const;
 
 export interface ProfileAnalysis {
-  segment: string; // Segmento de mercado
-  targetAudience: string; // Público-alvo
-  mainGoal: ClientGoal; // Objetivo principal
-  overallScore: number; // 1-10 avaliação geral
-  notes: string; // Observações detalhadas
+  segment: string;
+  targetAudience: string;
+  mainGoal: ClientGoal;
+  overallScore: number;
+  notes: string;
 }
-// ========================================
 
 // ========================================
 // FINANÇAS
@@ -80,7 +85,6 @@ export interface ProfileAnalysis {
 export type TransactionType = "income" | "expense";
 export type TransactionStatus = "pending" | "completed";
 
-// Categorias de despesas da empresa
 export const EXPENSE_CATEGORIES = [
   "Salários",
   "Ferramentas/Software",
@@ -91,7 +95,6 @@ export const EXPENSE_CATEGORIES = [
   "Outros",
 ] as const;
 
-// Categorias de receitas
 export const INCOME_CATEGORIES = [
   "Serviço de Cliente",
   "Gestão de Tráfego",
@@ -100,7 +103,6 @@ export const INCOME_CATEGORIES = [
   "Outros",
 ] as const;
 
-// Transação geral da empresa (entrada/saída)
 export interface Transaction {
   id: number;
   type: TransactionType;
@@ -109,29 +111,26 @@ export interface Transaction {
   date: string;
   category: string;
   status: TransactionStatus;
-  clientId?: number; // Vinculado a um cliente (opcional)
-  budgetId?: number; // Vinculado a um orçamento (opcional)
+  clientId?: number;
+  budgetId?: number;
   notes?: string;
 }
 
-// Movimentação na carteira virtual do cliente
 export interface WalletMovement {
   id: number;
-  type: "deposit" | "withdrawal"; // depósito ou saque/gasto
+  type: "deposit" | "withdrawal";
   value: number;
   date: string;
   description: string;
 }
 
-// Carteira virtual por cliente (para gestão de tráfego)
 export interface ClientWallet {
   id: number;
-  clientId: number; // Vinculado ao cliente
-  balance: number; // Saldo atual
-  movements: WalletMovement[]; // Histórico de movimentações
+  clientId: number;
+  balance: number;
+  movements: WalletMovement[];
   createdAt: string;
 }
-// ========================================
 
 // ========================================
 // ORÇAMENTOS
@@ -169,7 +168,7 @@ export interface BudgetItem {
 
 export interface Budget {
   id: number;
-  code: string; // ORC-001, ORC-002, etc.
+  code: string;
   clientId: number;
   title: string;
   description?: string;
@@ -177,15 +176,12 @@ export interface Budget {
   totalValue: number;
   status: BudgetStatus;
   createdAt: string;
-  validUntil: string; // Data de validade
-  sentAt?: string; // Data de envio
-  approvedAt?: string; // Data de aprovação
-  rejectedAt?: string; // Data de recusa
+  validUntil: string;
+  sentAt?: string;
+  approvedAt?: string;
+  rejectedAt?: string;
   notes?: string;
 }
-
-const initialBudgets: Budget[] = [];
-// ========================================
 
 export interface Client {
   id: number;
@@ -203,22 +199,11 @@ export interface Client {
     linkedin?: string;
     twitter?: string;
   };
-  leadId?: number; // Referência ao lead original
+  leadId?: number;
   origin?: LeadOrigin;
-  convertedAt?: string; // Data de conversão do lead
-  profileAnalysis?: ProfileAnalysis; // Análise do perfil
+  convertedAt?: string;
+  profileAnalysis?: ProfileAnalysis;
 }
-
-// Initial Data - Arrays vazios para começar do zero
-const initialLeads: Lead[] = [];
-
-const initialClients: Client[] = [];
-
-// Transações iniciais - vazio para começar do zero
-const initialTransactions: Transaction[] = [];
-
-// Carteiras virtuais iniciais - vazio para começar do zero
-const initialWallets: ClientWallet[] = [];
 
 // Sistema de Atividades/Notificações
 export type ActivityType =
@@ -239,40 +224,41 @@ export interface Activity {
   link?: string;
 }
 
-const ACTIVITIES_STORAGE_KEY = "turbine_activities";
-
 // Context Interface
 interface DataContextType {
+  // Loading state
+  isLoading: boolean;
+
   // Leads
   leads: Lead[];
   addLead: (
     lead: Omit<Lead, "id" | "createdAt" | "status">,
     selfRegistered?: boolean,
-  ) => void;
-  updateLeadStatus: (leadId: number, status: LeadStatus) => void;
-  markLeadAsViewed: (leadId: number) => void;
-  markAllLeadsAsViewed: () => void;
+  ) => Promise<void>;
+  updateLeadStatus: (leadId: number, status: LeadStatus) => Promise<void>;
+  markLeadAsViewed: (leadId: number) => Promise<void>;
+  markAllLeadsAsViewed: () => Promise<void>;
   getUnviewedLeadsCount: () => number;
-  deleteLead: (leadId: number) => boolean;
+  deleteLead: (leadId: number) => Promise<boolean>;
   convertLeadToClient: (
     leadId: number,
     clientData?: Partial<Client>,
-  ) => Client | null;
+  ) => Promise<Client | null>;
 
   // Clients
   clients: Client[];
-  addClient: (client: Omit<Client, "id">) => void;
-  updateClient: (clientId: number, data: Partial<Client>) => void;
-  deleteClient: (clientId: number) => boolean;
+  addClient: (client: Omit<Client, "id">) => Promise<void>;
+  updateClient: (clientId: number, data: Partial<Client>) => Promise<void>;
+  deleteClient: (clientId: number) => Promise<boolean>;
 
   // Finanças - Transações
   transactions: Transaction[];
-  addTransaction: (transaction: Omit<Transaction, "id">) => void;
+  addTransaction: (transaction: Omit<Transaction, "id">) => Promise<void>;
   updateTransaction: (
     transactionId: number,
     data: Partial<Transaction>,
-  ) => void;
-  deleteTransaction: (transactionId: number) => boolean;
+  ) => Promise<void>;
+  deleteTransaction: (transactionId: number) => Promise<boolean>;
 
   // Finanças - Carteira Virtual
   wallets: ClientWallet[];
@@ -281,11 +267,11 @@ interface DataContextType {
     clientId: number,
     initialDeposit?: number,
     initialMovement?: Omit<WalletMovement, "id">,
-  ) => ClientWallet;
+  ) => Promise<ClientWallet | null>;
   addWalletMovement: (
     walletId: number,
     movement: Omit<WalletMovement, "id">,
-  ) => void;
+  ) => Promise<void>;
 
   // Finanças - Cálculos
   getTotalIncome: () => number;
@@ -295,10 +281,12 @@ interface DataContextType {
 
   // Orçamentos
   budgets: Budget[];
-  addBudget: (budget: Omit<Budget, "id" | "code" | "createdAt">) => Budget;
-  updateBudget: (budgetId: number, data: Partial<Budget>) => void;
-  deleteBudget: (budgetId: number) => boolean;
-  updateBudgetStatus: (budgetId: number, status: BudgetStatus) => void;
+  addBudget: (
+    budget: Omit<Budget, "id" | "code" | "createdAt">,
+  ) => Promise<Budget | null>;
+  updateBudget: (budgetId: number, data: Partial<Budget>) => Promise<void>;
+  deleteBudget: (budgetId: number) => Promise<boolean>;
+  updateBudgetStatus: (budgetId: number, status: BudgetStatus) => Promise<void>;
   getBudgetsByClientId: (clientId: number) => Budget[];
 
   // Utils
@@ -322,211 +310,145 @@ interface DataContextType {
 
   // Atividades/Notificações
   activities: Activity[];
-  addActivity: (activity: Omit<Activity, "id" | "timestamp" | "read">) => void;
-  markActivityAsRead: (activityId: number) => void;
-  markAllActivitiesAsRead: () => void;
-  clearActivities: () => void;
+  addActivity: (
+    activity: Omit<Activity, "id" | "timestamp" | "read">,
+  ) => Promise<void>;
+  markActivityAsRead: (activityId: number) => Promise<void>;
+  markAllActivitiesAsRead: () => Promise<void>;
+  clearActivities: () => Promise<void>;
   getUnreadActivitiesCount: () => number;
+
+  // Refresh data
+  refreshData: () => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-// LocalStorage keys
-const LEADS_STORAGE_KEY = "turbine_leads";
-const CLIENTS_STORAGE_KEY = "turbine_clients";
-const TRANSACTIONS_STORAGE_KEY = "turbine_transactions";
-const WALLETS_STORAGE_KEY = "turbine_wallets";
-const BUDGETS_STORAGE_KEY = "turbine_budgets";
-
-// Helper functions para LocalStorage
-const loadFromStorage = <T,>(key: string, fallback: T): T => {
-  try {
-    const stored = localStorage.getItem(key);
-    return stored ? JSON.parse(stored) : fallback;
-  } catch {
-    return fallback;
-  }
-};
-
-const saveToStorage = <T,>(key: string, data: T): void => {
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-  } catch (error) {
-    console.error("Error saving to localStorage:", error);
-  }
-};
-
 export function DataProvider({ children }: { children: ReactNode }) {
-  const [leads, setLeads] = useState<Lead[]>(() =>
-    loadFromStorage(LEADS_STORAGE_KEY, initialLeads),
-  );
-  const [clients, setClients] = useState<Client[]>(() =>
-    loadFromStorage(CLIENTS_STORAGE_KEY, initialClients),
-  );
-  const [transactions, setTransactions] = useState<Transaction[]>(() =>
-    loadFromStorage(TRANSACTIONS_STORAGE_KEY, initialTransactions),
-  );
-  const [wallets, setWallets] = useState<ClientWallet[]>(() =>
-    loadFromStorage(WALLETS_STORAGE_KEY, initialWallets),
-  );
-  const [budgets, setBudgets] = useState<Budget[]>(() =>
-    loadFromStorage(BUDGETS_STORAGE_KEY, initialBudgets),
-  );
-  const [activities, setActivities] = useState<Activity[]>(() =>
-    loadFromStorage(ACTIVITIES_STORAGE_KEY, []),
-  );
+  const [isLoading, setIsLoading] = useState(true);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [wallets, setWallets] = useState<ClientWallet[]>([]);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
 
-  // Salvar no LocalStorage quando os dados mudarem
-  useEffect(() => {
-    saveToStorage(LEADS_STORAGE_KEY, leads);
-  }, [leads]);
+  // Carregar dados iniciais do Supabase
+  const loadData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const [
+        leadsData,
+        clientsData,
+        transactionsData,
+        walletsData,
+        budgetsData,
+        activitiesData,
+      ] = await Promise.all([
+        leadService.getAll(),
+        clientService.getAll(),
+        transactionService.getAll(),
+        walletService.getAll(),
+        budgetService.getAll(),
+        activityService.getAll(),
+      ]);
+
+      setLeads(leadsData);
+      setClients(clientsData);
+      setTransactions(transactionsData);
+      setWallets(walletsData);
+      setBudgets(budgetsData);
+      setActivities(activitiesData);
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    saveToStorage(CLIENTS_STORAGE_KEY, clients);
-  }, [clients]);
+    loadData();
+  }, [loadData]);
 
-  useEffect(() => {
-    saveToStorage(TRANSACTIONS_STORAGE_KEY, transactions);
-  }, [transactions]);
-
-  useEffect(() => {
-    saveToStorage(WALLETS_STORAGE_KEY, wallets);
-  }, [wallets]);
-
-  useEffect(() => {
-    saveToStorage(BUDGETS_STORAGE_KEY, budgets);
-  }, [budgets]);
-
-  useEffect(() => {
-    saveToStorage(ACTIVITIES_STORAGE_KEY, activities);
-  }, [activities]);
+  const refreshData = useCallback(async () => {
+    await loadData();
+  }, [loadData]);
 
   // ========================================
-  // VALIDAÇÃO DE CONSISTÊNCIA LEAD-CLIENTE
-  // Garante integridade das referências
+  // LEADS
   // ========================================
-  useEffect(() => {
-    let leadsUpdated = false;
-    let clientsUpdated = false;
-    const updatedLeads = [...leads];
-    const updatedClients = [...clients];
-
-    // 1. Verificar clientes que têm leadId mas o lead não existe mais
-    updatedClients.forEach((client, index) => {
-      if (client.leadId) {
-        const lead = leads.find((l) => l.id === client.leadId);
-        if (!lead) {
-          // Lead não existe mais - manter cliente mas remover referência
-          updatedClients[index] = { ...client, leadId: undefined };
-          clientsUpdated = true;
-          console.warn(
-            `Cliente ${client.id}: Lead ${client.leadId} não encontrado, referência removida.`,
-          );
-        }
-      }
-    });
-
-    // 2. Verificar leads convertidos que apontam para cliente inexistente
-    updatedLeads.forEach((lead, index) => {
-      if (lead.convertedToClientId) {
-        const client = clients.find((c) => c.id === lead.convertedToClientId);
-        if (!client) {
-          // Cliente não existe mais - resetar lead
-          updatedLeads[index] = {
-            ...lead,
-            convertedToClientId: undefined,
-            status: "proposta" as LeadStatus,
-          };
-          leadsUpdated = true;
-          console.warn(
-            `Lead ${lead.id}: Cliente ${lead.convertedToClientId} não encontrado, conversão desfeita.`,
-          );
-        }
-      }
-    });
-
-    // 3. Sincronizar origem do cliente com o lead (se cliente veio de lead)
-    updatedClients.forEach((client, index) => {
-      if (client.leadId) {
-        const lead = updatedLeads.find((l) => l.id === client.leadId);
-        if (lead && client.origin !== lead.origin) {
-          // Usar origem do lead como referência
-          updatedClients[index] = { ...client, origin: lead.origin };
-          clientsUpdated = true;
-        }
-      }
-    });
-
-    // Aplicar correções se necessário
-    if (leadsUpdated) setLeads(updatedLeads);
-    if (clientsUpdated) setClients(updatedClients);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Rodar apenas na inicialização
-
-  // Lead Functions
-  const addLead = (
+  const addLead = async (
     leadData: Omit<Lead, "id" | "createdAt" | "status">,
-    selfRegistered: boolean = false,
+    selfRegistered = false,
   ) => {
-    const newLead: Lead = {
-      ...leadData,
-      id: leads.length > 0 ? Math.max(...leads.map((l) => l.id)) + 1 : 1,
-      status: "novo",
-      createdAt: new Date().toISOString().split("T")[0],
-      selfRegistered,
-    };
-    setLeads([newLead, ...leads]);
+    const newLead = await leadService.create(leadData, selfRegistered);
+    if (newLead) {
+      setLeads((prev) => [newLead, ...prev]);
+    }
   };
 
-  const updateLeadStatus = (leadId: number, status: LeadStatus) => {
-    setLeads(
-      leads.map((lead) => (lead.id === leadId ? { ...lead, status } : lead)),
-    );
+  const updateLeadStatus = async (leadId: number, status: LeadStatus) => {
+    const updated = await leadService.updateStatus(leadId, status);
+    if (updated) {
+      setLeads((prev) =>
+        prev.map((lead) => (lead.id === leadId ? updated : lead)),
+      );
+    }
   };
 
-  const markLeadAsViewed = (leadId: number) => {
-    setLeads(
-      leads.map((lead) =>
-        lead.id === leadId ? { ...lead, viewed: true } : lead,
-      ),
-    );
+  const markLeadAsViewed = async (leadId: number) => {
+    const updated = await leadService.markAsViewed(leadId);
+    if (updated) {
+      setLeads((prev) =>
+        prev.map((lead) => (lead.id === leadId ? updated : lead)),
+      );
+    }
   };
 
-  const markAllLeadsAsViewed = () => {
-    setLeads(
-      leads.map((lead) =>
-        lead.selfRegistered && !lead.viewed ? { ...lead, viewed: true } : lead,
-      ),
-    );
+  const markAllLeadsAsViewed = async () => {
+    const success = await leadService.markAllAsViewed();
+    if (success) {
+      setLeads((prev) =>
+        prev.map((lead) =>
+          lead.selfRegistered && !lead.viewed
+            ? { ...lead, viewed: true }
+            : lead,
+        ),
+      );
+    }
   };
 
   const getUnviewedLeadsCount = () => {
     return leads.filter((lead) => lead.selfRegistered && !lead.viewed).length;
   };
 
-  const deleteLead = (leadId: number): boolean => {
+  const deleteLead = async (leadId: number): Promise<boolean> => {
     const lead = leads.find((l) => l.id === leadId);
     if (!lead) return false;
 
-    // Se o lead foi convertido em cliente, também remove a referência do cliente
+    // Se o lead foi convertido em cliente, remove a referência
     if (lead.convertedToClientId) {
-      setClients(
-        clients.map((c) =>
-          c.id === lead.convertedToClientId
+      await clientService.removeLeadReference(leadId);
+      setClients((prev) =>
+        prev.map((c) =>
+          c.leadId === leadId
             ? { ...c, leadId: undefined, origin: undefined }
             : c,
         ),
       );
     }
 
-    setLeads(leads.filter((l) => l.id !== leadId));
-    return true;
+    const success = await leadService.delete(leadId);
+    if (success) {
+      setLeads((prev) => prev.filter((l) => l.id !== leadId));
+    }
+    return success;
   };
 
-  const convertLeadToClient = (
+  const convertLeadToClient = async (
     leadId: number,
     clientData?: Partial<Client>,
-  ): Client | null => {
+  ): Promise<Client | null> => {
     const lead = leads.find((l) => l.id === leadId);
     if (!lead) return null;
 
@@ -535,11 +457,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return clients.find((c) => c.id === lead.convertedToClientId) || null;
     }
 
-    const newClientId =
-      clients.length > 0 ? Math.max(...clients.map((c) => c.id)) + 1 : 1;
-
-    const newClient: Client = {
-      id: newClientId,
+    const newClientData: Omit<Client, "id"> = {
       name: lead.company || lead.name,
       email: lead.email,
       phone: lead.phone,
@@ -553,56 +471,64 @@ export function DataProvider({ children }: { children: ReactNode }) {
       ...clientData,
     };
 
-    setClients([...clients, newClient]);
+    const newClient = await clientService.create(newClientData);
+    if (!newClient) return null;
 
-    // Update lead with client reference and set status to fechado
-    setLeads(
-      leads.map((l) =>
-        l.id === leadId
-          ? {
-              ...l,
-              status: "fechado" as LeadStatus,
-              convertedToClientId: newClientId,
-            }
-          : l,
-      ),
-    );
+    setClients((prev) => [newClient, ...prev]);
+
+    // Update lead with client reference
+    const updatedLead = await leadService.update(leadId, {
+      status: "fechado" as LeadStatus,
+      convertedToClientId: newClient.id,
+    });
+
+    if (updatedLead) {
+      setLeads((prev) => prev.map((l) => (l.id === leadId ? updatedLead : l)));
+    }
 
     return newClient;
   };
 
-  // Client Functions
-  const addClient = (clientData: Omit<Client, "id">) => {
-    const newClient: Client = {
-      ...clientData,
-      id: clients.length > 0 ? Math.max(...clients.map((c) => c.id)) + 1 : 1,
-    };
-    setClients([...clients, newClient]);
+  // ========================================
+  // CLIENTS
+  // ========================================
+  const addClient = async (clientData: Omit<Client, "id">) => {
+    const newClient = await clientService.create(clientData);
+    if (newClient) {
+      setClients((prev) => [newClient, ...prev]);
+    }
   };
 
-  const updateClient = (clientId: number, data: Partial<Client>) => {
-    setClients(
-      clients.map((client) =>
-        client.id === clientId ? { ...client, ...data } : client,
-      ),
-    );
+  const updateClient = async (clientId: number, data: Partial<Client>) => {
+    const updated = await clientService.update(clientId, data);
+    if (updated) {
+      setClients((prev) =>
+        prev.map((client) => (client.id === clientId ? updated : client)),
+      );
+    }
   };
 
-  const deleteClient = (clientId: number): boolean => {
+  const deleteClient = async (clientId: number): Promise<boolean> => {
     const client = clients.find((c) => c.id === clientId);
     if (!client) return false;
 
     // Se o cliente veio de um lead, remove a referência do lead
     if (client.leadId) {
-      setLeads(
-        leads.map((l) =>
-          l.id === client.leadId ? { ...l, convertedToClientId: undefined } : l,
-        ),
-      );
+      const updatedLead = await leadService.update(client.leadId, {
+        convertedToClientId: undefined,
+      });
+      if (updatedLead) {
+        setLeads((prev) =>
+          prev.map((l) => (l.id === client.leadId ? updatedLead : l)),
+        );
+      }
     }
 
-    setClients(clients.filter((c) => c.id !== clientId));
-    return true;
+    const success = await clientService.delete(clientId);
+    if (success) {
+      setClients((prev) => prev.filter((c) => c.id !== clientId));
+    }
+    return success;
   };
 
   // Utils
@@ -618,10 +544,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return clients.find((c) => c.leadId === leadId);
   };
 
-  /**
-   * Retorna os dados consolidados do cliente com informações do lead de origem
-   * Use quando precisar dos dados completos (lead + cliente)
-   */
   const getClientWithLeadData = (clientId: number) => {
     const client = clients.find((c) => c.id === clientId);
     if (!client) return null;
@@ -632,7 +554,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     return {
       ...client,
-      // Dados do lead original (somente leitura)
       leadData: lead
         ? {
             name: lead.name,
@@ -650,111 +571,71 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   // ========================================
-  // FUNÇÕES DE FINANÇAS
+  // TRANSACTIONS
   // ========================================
-
-  // Transações
-  const addTransaction = (transactionData: Omit<Transaction, "id">) => {
-    const newTransaction: Transaction = {
-      ...transactionData,
-      id:
-        transactions.length > 0
-          ? Math.max(...transactions.map((t) => t.id)) + 1
-          : 1,
-    };
-    setTransactions([newTransaction, ...transactions]);
+  const addTransaction = async (transactionData: Omit<Transaction, "id">) => {
+    const newTransaction = await transactionService.create(transactionData);
+    if (newTransaction) {
+      setTransactions((prev) => [newTransaction, ...prev]);
+    }
   };
 
-  const updateTransaction = (
+  const updateTransaction = async (
     transactionId: number,
     data: Partial<Transaction>,
   ) => {
-    setTransactions(
-      transactions.map((t) => (t.id === transactionId ? { ...t, ...data } : t)),
-    );
+    const updated = await transactionService.update(transactionId, data);
+    if (updated) {
+      setTransactions((prev) =>
+        prev.map((t) => (t.id === transactionId ? updated : t)),
+      );
+    }
   };
 
-  const deleteTransaction = (transactionId: number): boolean => {
-    const exists = transactions.find((t) => t.id === transactionId);
-    if (!exists) return false;
-    setTransactions(transactions.filter((t) => t.id !== transactionId));
-    return true;
+  const deleteTransaction = async (transactionId: number): Promise<boolean> => {
+    const success = await transactionService.delete(transactionId);
+    if (success) {
+      setTransactions((prev) => prev.filter((t) => t.id !== transactionId));
+    }
+    return success;
   };
 
-  // Carteira Virtual
+  // ========================================
+  // WALLETS
+  // ========================================
   const getWalletByClientId = (clientId: number): ClientWallet | undefined => {
     return wallets.find((w) => w.clientId === clientId);
   };
 
-  const createWallet = (
+  const createWallet = async (
     clientId: number,
-    initialDeposit: number = 0,
+    initialDeposit = 0,
     initialMovement?: Omit<WalletMovement, "id">,
-  ): ClientWallet => {
+  ): Promise<ClientWallet | null> => {
     const existingWallet = getWalletByClientId(clientId);
     if (existingWallet) return existingWallet;
 
-    let movements: WalletMovement[] = [];
-    let balance = 0;
-
-    // Se tem movimento inicial customizado, usar ele
-    if (initialMovement) {
-      movements = [{ ...initialMovement, id: 1 }];
-      balance =
-        initialMovement.type === "deposit"
-          ? initialMovement.value
-          : -initialMovement.value;
-    } else if (initialDeposit > 0) {
-      // Senão, se tem depósito inicial, criar movimento de depósito
-      movements = [
-        {
-          id: 1,
-          type: "deposit",
-          value: initialDeposit,
-          date: new Date().toISOString().split("T")[0],
-          description: "Depósito inicial",
-        },
-      ];
-      balance = initialDeposit;
-    }
-
-    const newWallet: ClientWallet = {
-      id: wallets.length > 0 ? Math.max(...wallets.map((w) => w.id)) + 1 : 1,
+    const newWallet = await walletService.create(
       clientId,
-      balance,
-      createdAt: new Date().toISOString().split("T")[0],
-      movements,
-    };
-    setWallets([...wallets, newWallet]);
+      initialDeposit,
+      initialMovement,
+    );
+    if (newWallet) {
+      setWallets((prev) => [...prev, newWallet]);
+    }
     return newWallet;
   };
 
-  const addWalletMovement = (
+  const addWalletMovement = async (
     walletId: number,
     movement: Omit<WalletMovement, "id">,
   ) => {
-    setWallets(
-      wallets.map((wallet) => {
-        if (wallet.id !== walletId) return wallet;
-
-        const newMovementId =
-          wallet.movements.length > 0
-            ? Math.max(...wallet.movements.map((m) => m.id)) + 1
-            : 1;
-        const newMovement: WalletMovement = { ...movement, id: newMovementId };
-
-        const newBalance =
-          movement.type === "deposit"
-            ? wallet.balance + movement.value
-            : wallet.balance - movement.value;
-
-        return {
-          ...wallet,
-          balance: newBalance,
-          movements: [newMovement, ...wallet.movements],
-        };
-      }),
-    );
+    const updatedWallet = await walletService.addMovement(walletId, movement);
+    if (updatedWallet) {
+      setWallets((prev) =>
+        prev.map((w) => (w.id === walletId ? updatedWallet : w)),
+      );
+    }
   };
 
   // Cálculos financeiros
@@ -779,66 +660,54 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   // ========================================
-  // FUNÇÕES DE ORÇAMENTOS
+  // BUDGETS
   // ========================================
-
-  const generateBudgetCode = (): string => {
-    const nextNumber = budgets.length + 1;
-    return `ORC-${String(nextNumber).padStart(3, "0")}`;
-  };
-
-  const addBudget = (
+  const addBudget = async (
     budgetData: Omit<Budget, "id" | "code" | "createdAt">,
-  ): Budget => {
-    const newBudget: Budget = {
-      ...budgetData,
-      id: budgets.length > 0 ? Math.max(...budgets.map((b) => b.id)) + 1 : 1,
-      code: generateBudgetCode(),
-      createdAt: new Date().toISOString().split("T")[0],
-    };
-    setBudgets([newBudget, ...budgets]);
+  ): Promise<Budget | null> => {
+    const newBudget = await budgetService.create(budgetData);
+    if (newBudget) {
+      setBudgets((prev) => [newBudget, ...prev]);
+    }
     return newBudget;
   };
 
-  const updateBudget = (budgetId: number, data: Partial<Budget>) => {
-    setBudgets(
-      budgets.map((budget) =>
-        budget.id === budgetId ? { ...budget, ...data } : budget,
-      ),
+  const updateBudget = async (budgetId: number, data: Partial<Budget>) => {
+    const updated = await budgetService.update(budgetId, data);
+    if (updated) {
+      setBudgets((prev) =>
+        prev.map((budget) => (budget.id === budgetId ? updated : budget)),
+      );
+    }
+  };
+
+  const deleteBudget = async (budgetId: number): Promise<boolean> => {
+    // Remove transações vinculadas
+    await transactionService.deleteByBudgetId(budgetId);
+    setTransactions((prev) => prev.filter((t) => t.budgetId !== budgetId));
+
+    const success = await budgetService.delete(budgetId);
+    if (success) {
+      setBudgets((prev) => prev.filter((b) => b.id !== budgetId));
+    }
+    return success;
+  };
+
+  const updateBudgetStatus = async (budgetId: number, status: BudgetStatus) => {
+    const updated = await budgetService.updateStatus(budgetId, status);
+    if (!updated) return;
+
+    setBudgets((prev) =>
+      prev.map((budget) => (budget.id === budgetId ? updated : budget)),
     );
-  };
 
-  const deleteBudget = (budgetId: number): boolean => {
-    const budget = budgets.find((b) => b.id === budgetId);
-    if (!budget) return false;
-
-    // Remover transações vinculadas a este orçamento
-    setTransactions(transactions.filter((t) => t.budgetId !== budgetId));
-
-    // Remover o orçamento
-    setBudgets(budgets.filter((b) => b.id !== budgetId));
-    return true;
-  };
-
-  const updateBudgetStatus = (budgetId: number, status: BudgetStatus) => {
-    const now = new Date().toISOString().split("T")[0];
-    const updates: Partial<Budget> = { status };
-
-    if (status === "sent") updates.sentAt = now;
-    if (status === "approved") updates.approvedAt = now;
-    if (status === "rejected") updates.rejectedAt = now;
-
-    updateBudget(budgetId, updates);
-
-    // ========================================
-    // INTEGRAÇÃO FINANCEIRA - ORÇAMENTO APROVADO
-    // ========================================
+    // Integração financeira - orçamento aprovado
     if (status === "approved") {
       const budget = budgets.find((b) => b.id === budgetId);
       if (budget) {
         const client = clients.find((c) => c.id === budget.clientId);
+        const now = new Date().toISOString().split("T")[0];
 
-        // Determinar categoria baseado no título/descrição do orçamento
         const isTrafficBudget =
           budget.title.toLowerCase().includes("tráfego") ||
           budget.title.toLowerCase().includes("traffic") ||
@@ -852,18 +721,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
           ? "Gestão de Tráfego"
           : "Serviço de Cliente";
 
-        // Criar transação de receita vinculada ao cliente e orçamento
-        addTransaction({
+        // Criar transação de receita
+        const newTransaction = await transactionService.create({
           type: "income",
           description: `${budget.code} - ${budget.title}`,
           value: budget.totalValue,
           date: now,
           category,
-          status: "pending", // Pendente até o pagamento ser confirmado
+          status: "pending",
           clientId: budget.clientId,
           budgetId: budget.id,
           notes: `Receita gerada automaticamente pela aprovação do orçamento ${budget.code}${client ? ` - Cliente: ${client.name}` : ""}`,
         });
+
+        if (newTransaction) {
+          setTransactions((prev) => [newTransaction, ...prev]);
+        }
 
         // Se for orçamento de tráfego, criar/atualizar carteira virtual
         if (isTrafficBudget) {
@@ -876,11 +749,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
           };
 
           if (!wallet) {
-            // Criar carteira com depósito inicial
-            createWallet(budget.clientId, 0, movementData);
+            await createWallet(budget.clientId, 0, movementData);
           } else {
-            // Adicionar movimentação na carteira existente
-            addWalletMovement(wallet.id, movementData);
+            await addWalletMovement(wallet.id, movementData);
           }
         }
       }
@@ -892,36 +763,38 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   // ========================================
-  // FUNÇÕES DE ATIVIDADES/NOTIFICAÇÕES
+  // ACTIVITIES
   // ========================================
-  const addActivity = (
+  const addActivity = async (
     activityData: Omit<Activity, "id" | "timestamp" | "read">,
   ) => {
-    const newActivity: Activity = {
-      ...activityData,
-      id:
-        activities.length > 0
-          ? Math.max(...activities.map((a) => a.id)) + 1
-          : 1,
-      timestamp: new Date().toISOString(),
-      read: false,
-    };
-    // Manter apenas as últimas 50 atividades
-    setActivities((prev) => [newActivity, ...prev].slice(0, 50));
+    const newActivity = await activityService.create(activityData);
+    if (newActivity) {
+      setActivities((prev) => [newActivity, ...prev].slice(0, 50));
+    }
   };
 
-  const markActivityAsRead = (activityId: number) => {
-    setActivities(
-      activities.map((a) => (a.id === activityId ? { ...a, read: true } : a)),
-    );
+  const markActivityAsRead = async (activityId: number) => {
+    const success = await activityService.markAsRead(activityId);
+    if (success) {
+      setActivities((prev) =>
+        prev.map((a) => (a.id === activityId ? { ...a, read: true } : a)),
+      );
+    }
   };
 
-  const markAllActivitiesAsRead = () => {
-    setActivities(activities.map((a) => ({ ...a, read: true })));
+  const markAllActivitiesAsRead = async () => {
+    const success = await activityService.markAllAsRead();
+    if (success) {
+      setActivities((prev) => prev.map((a) => ({ ...a, read: true })));
+    }
   };
 
-  const clearActivities = () => {
-    setActivities([]);
+  const clearActivities = async () => {
+    const success = await activityService.clearAll();
+    if (success) {
+      setActivities([]);
+    }
   };
 
   const getUnreadActivitiesCount = () => {
@@ -931,6 +804,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   return (
     <DataContext.Provider
       value={{
+        isLoading,
         leads,
         addLead,
         updateLeadStatus,
@@ -970,6 +844,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         markAllActivitiesAsRead,
         clearActivities,
         getUnreadActivitiesCount,
+        refreshData,
       }}
     >
       {children}
