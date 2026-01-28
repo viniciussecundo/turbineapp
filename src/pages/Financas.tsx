@@ -385,31 +385,29 @@ export default function Financas() {
                     </SelectContent>
                   </Select>
                 </div>
-                {transactionForm.type === "income" && (
-                  <div className="space-y-2">
-                    <Label>Vincular a Cliente (opcional)</Label>
-                    <Select
-                      value={transactionForm.clientId}
-                      onValueChange={(v) =>
-                        setTransactionForm({ ...transactionForm, clientId: v })
-                      }
-                    >
-                      <SelectTrigger className="bg-secondary/50 border-white/10">
-                        <SelectValue placeholder="Nenhum cliente selecionado" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {clients.map((client) => (
-                          <SelectItem
-                            key={client.id}
-                            value={client.id.toString()}
-                          >
-                            {client.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
+                <div className="space-y-2">
+                  <Label>Vincular a Cliente (opcional)</Label>
+                  <Select
+                    value={transactionForm.clientId}
+                    onValueChange={(v) =>
+                      setTransactionForm({ ...transactionForm, clientId: v })
+                    }
+                  >
+                    <SelectTrigger className="bg-secondary/50 border-white/10">
+                      <SelectValue placeholder="Nenhum cliente selecionado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clients.map((client) => (
+                        <SelectItem
+                          key={client.id}
+                          value={client.id.toString()}
+                        >
+                          {client.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="space-y-2">
                   <Label>Observações (opcional)</Label>
                   <Textarea
