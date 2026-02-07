@@ -7,6 +7,7 @@ import {
   useCallback,
 } from "react";
 
+import { useAuth } from "@/contexts/AuthContext";
 import { leadService } from "@/services/leadService";
 import { clientService } from "@/services/clientService";
 import { transactionService } from "@/services/transactionService";
@@ -325,6 +326,7 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export function DataProvider({ children }: { children: ReactNode }) {
+  const { session } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
@@ -366,9 +368,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // So carrega dados quando ha sessao ativa
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (session) {
+      loadData();
+    } else {
+      setLeads([]);
+      setClients([]);
+      setTransactions([]);
+      setWallets([]);
+      setBudgets([]);
+      setActivities([]);
+      setIsLoading(false);
+    }
+  }, [session, loadData]);
 
   const refreshData = useCallback(async () => {
     await loadData();

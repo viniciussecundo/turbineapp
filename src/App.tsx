@@ -4,8 +4,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { DataProvider } from "./contexts/DataContext";
+import { AuthProvider } from "./contexts/AuthContext";
 import { AppLayout } from "./components/layout/AppLayout";
 import { PageTransition } from "./components/PageTransition";
+import { PrivateRoute } from "./components/auth/PrivateRoute";
+import { PublicRoute } from "./components/auth/PublicRoute";
 import Index from "./pages/Index";
 import Financas from "./pages/Financas";
 import Clientes from "./pages/Clientes";
@@ -13,37 +16,52 @@ import Leads from "./pages/Leads";
 import Orcamentos from "./pages/Orcamentos";
 import Relatorios from "./pages/Relatorios";
 import CadastroPublico from "./pages/CadastroPublico";
+import Login from "./pages/Login";
+import ResetPassword from "./pages/ResetPassword";
+import UpdatePassword from "./pages/UpdatePassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <DataProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <PageTransition>
-            <Routes>
-              {/* Rota pública - sem layout */}
-              <Route path="/cadastro" element={<CadastroPublico />} />
+    <AuthProvider>
+      <DataProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <PageTransition>
+              <Routes>
+                <Route element={<PublicRoute />}>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                </Route>
 
-              {/* Rotas internas - com layout */}
-              <Route element={<AppLayout />}>
-                <Route path="/" element={<Index />} />
-                <Route path="/financas" element={<Financas />} />
-                <Route path="/clientes" element={<Clientes />} />
-                <Route path="/leads" element={<Leads />} />
-                <Route path="/orcamentos" element={<Orcamentos />} />
-                <Route path="/relatorios" element={<Relatorios />} />
-              </Route>
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </PageTransition>
-        </BrowserRouter>
-      </TooltipProvider>
-    </DataProvider>
+                {/* Rota de atualizacao de senha (precisa de sessao via link) */}
+                <Route path="/update-password" element={<UpdatePassword />} />
+
+                {/* Rota pública - sem layout */}
+                <Route path="/cadastro" element={<CadastroPublico />} />
+
+                {/* Rotas internas - com layout */}
+                <Route element={<PrivateRoute />}>
+                  <Route element={<AppLayout />}>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/financas" element={<Financas />} />
+                    <Route path="/clientes" element={<Clientes />} />
+                    <Route path="/leads" element={<Leads />} />
+                    <Route path="/orcamentos" element={<Orcamentos />} />
+                    <Route path="/relatorios" element={<Relatorios />} />
+                  </Route>
+                </Route>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </PageTransition>
+          </BrowserRouter>
+        </TooltipProvider>
+      </DataProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
