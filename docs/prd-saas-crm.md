@@ -16,6 +16,8 @@ Transformar o TurbineApp em um CRM SaaS confiável, seguro e escalável, com aut
 2. **Autorização por papéis** (RBAC) e políticas.
 3. **Isolamento total por tenant** (dados e permissões).
 4. **Onboarding simples** (criação de organização + convite).
+5. **Times colaborativos** para compartilhar dados dentro do mesmo tenant.
+6. **Admin master** (Turbine Tech) para validar/bloquear usuários e controlar acesso.
 
 ---
 
@@ -52,7 +54,17 @@ Transformar o TurbineApp em um CRM SaaS confiável, seguro e escalável, com aut
 **RF‑RBAC‑02** — Admin pode criar/editar convites.  
 **RF‑RBAC‑03** — Leitura não pode editar dados.  
 
-### 5.4 Onboarding (Organização)
+### 5.4 Times (colaboração interna)
+**RF‑TEAM‑01** — Usuários pertencem a **times** dentro do tenant.  
+**RF‑TEAM‑02** — Usuários do mesmo time compartilham dados salvos no CRM.  
+**RF‑TEAM‑03** — Admin do tenant pode adicionar/remover usuários de um time.  
+
+### 5.5 Admin master (Turbine Tech)
+**RF‑MASTER‑01** — Existe o papel **admin master** com acesso administrativo global.  
+**RF‑MASTER‑02** — Admin master pode **validar** ou **bloquear** usuários.  
+**RF‑MASTER‑03** — Admin master gerencia políticas de acesso e auditoria.  
+
+### 5.6 Onboarding (Organização)
 **RF‑ONB‑01** — Criar organização + usuário admin.  
 **RF‑ONB‑02** — Convites por e‑mail com link único e expiração.  
 **RF‑ONB‑03** — Aceite de convite cria usuário com role atribuída.  
@@ -91,6 +103,9 @@ Transformar o TurbineApp em um CRM SaaS confiável, seguro e escalável, com aut
 - **users**: id, email, nome, tenant_id  
 - **roles**: id, nome, escopo  
 - **user_roles**: user_id, role_id  
+- **teams**: id, tenant_id, nome  
+- **team_members**: team_id, user_id  
+- **user_status**: user_id, status, motivo, atualizado_em  
 - **sessions**: user_id, refresh_token  
 - **audit_logs**: actor_id, ação, recurso, timestamp  
 
@@ -123,4 +138,3 @@ Transformar o TurbineApp em um CRM SaaS confiável, seguro e escalável, com aut
 ## 12) Dependências e riscos
 **Dependências:** provedor de auth (ex.: Supabase/Auth0).  
 **Riscos:** vazamento entre tenants; mitigação com RLS + testes.  
-
