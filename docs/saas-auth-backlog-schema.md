@@ -1,65 +1,71 @@
 # SaaS CRM — Backlog detalhado + Schema multi‑tenant (Supabase)
 
 Este documento complementa o PRD e define:
-1) backlog detalhado com tarefas e estimativas;  
-2) escolha do provedor de autenticação (Supabase);  
-3) desenho do schema multi‑tenant + RLS (Row Level Security).
+
+1. backlog detalhado com tarefas e estimativas;
+2. escolha do provedor de autenticação (Supabase);
+3. desenho do schema multi‑tenant + RLS (Row Level Security).
 
 ---
 
 ## 1) Provedor de autenticação
+
 **Escolha:** **Supabase Auth** (JWT + RLS nativos, integração com Postgres).  
 Motivos: já existe cliente Supabase no projeto, reduz custo e tempo de integração.
 
 ---
 
 ## 2) Backlog detalhado (com estimativas)
+
 Estimativas em **story points (SP)**.
 
 ### Épico A — Auth básico (total ~13 SP)
-1. **A1 — Tela de login** (2 SP)  
+
+1. **A1 — Tela de login** (2 SP)
    - UI + validação de e‑mail/senha.
-2. **A2 — Integração Supabase Auth (signIn)** (2 SP)  
+2. **A2 — Integração Supabase Auth (signIn)** (2 SP)
    - fluxo de login + sessão.
-3. **A3 — Reset de senha** (3 SP)  
+3. **A3 — Reset de senha** (3 SP)
    - solicitação, link e confirmação.
-4. **A4 — Logout global** (2 SP)  
+4. **A4 — Logout global** (2 SP)
    - revogar sessões ativas.
-5. **A5 — Guardas de rota (private/public)** (4 SP)  
+5. **A5 — Guardas de rota (private/public)** (4 SP)
    - bloquear `/` e módulos sem sessão.
 
 ### Épico B — Multi‑tenant + RBAC (total ~21 SP)
-1. **B1 — Schema multi‑tenant (tenant_id)** (5 SP)  
+
+1. **B1 — Schema multi‑tenant (tenant_id)** (5 SP)
    - migrações e índices.
-2. **B2 — RLS por tenant (políticas)** (6 SP)  
+2. **B2 — RLS por tenant (políticas)** (6 SP)
    - select/insert/update/delete.
-3. **B3 — Claims de tenant no JWT** (4 SP)  
+3. **B3 — Claims de tenant no JWT** (4 SP)
    - garantir `tenant_id` em sessão.
-4. **B4 — RBAC básico (roles)** (4 SP)  
+4. **B4 — RBAC básico (roles)** (4 SP)
    - Admin, Vendas, Financeiro, Leitura.
-5. **B5 — Permissões por módulo** (2 SP)  
+5. **B5 — Permissões por módulo** (2 SP)
    - habilitar/desabilitar views e ações.
 
 ### Épico C — Times + Administração Master (total ~16 SP)
-1. **C1 — Schema de times** (4 SP)  
+
+1. **C1 — Schema de times** (4 SP)
    - tabelas `teams` e `team_members`.
-2. **C2 — UI de times** (5 SP)  
+2. **C2 — UI de times** (5 SP)
    - criar time, adicionar/remover membros.
-3. **C3 — Compartilhamento por time** (4 SP)  
+3. **C3 — Compartilhamento por time** (4 SP)
    - regras de visibilidade por `team_id`.
-4. **C4 — Admin master (Turbine Tech)** (3 SP)  
+4. **C4 — Admin master (Turbine Tech)** (3 SP)
    - validar/bloquear usuários, auditoria e listagem global.
 
-### Épico D — Onboarding (total ~13 SP)
-1. **D1 — Criar organização + admin** (5 SP)  
-   - fluxo de signup inicial.
-2. **D2 — Convites por e‑mail** (4 SP)  
+### Épico D — Onboarding (total ~8 SP)
+
+1. **D1 — Convites por e‑mail** (4 SP)
    - criação e aceite de convite.
-3. **D3 — Aceite de convite + role** (4 SP)  
+2. **D2 — Aceite de convite + role** (4 SP)
    - criação de usuário + role.
 
 ### Épico E — Auditoria e segurança (total ~10 SP)
-1. **E1 — Audit log** (4 SP)  
+
+1. **E1 — Audit log** (4 SP)
    - registrar ações críticas (CRUD financeiro).
 2. **E2 — Rate limit / proteção login** (3 SP)
 3. **E3 — Alertas de segurança** (3 SP)
@@ -67,7 +73,9 @@ Estimativas em **story points (SP)**.
 ---
 
 ## 3) Schema multi‑tenant (Postgres / Supabase)
+
 ### 3.1 Tabelas base (conceitual)
+
 ```sql
 create table tenants (
   id uuid primary key default gen_random_uuid(),
@@ -116,6 +124,7 @@ create table leads (
 ```
 
 ### 3.2 Índices recomendados
+
 ```sql
 create index on profiles(tenant_id);
 create index on teams(tenant_id);
@@ -128,7 +137,9 @@ create index on leads(team_id);
 ---
 
 ## 4) RLS (Row Level Security)
+
 ### 4.1 Habilitar RLS
+
 ```sql
 alter table profiles enable row level security;
 alter table teams enable row level security;
@@ -137,6 +148,7 @@ alter table leads enable row level security;
 ```
 
 ### 4.2 Policies — perfis
+
 ```sql
 create policy "profiles: read own tenant"
 on profiles
@@ -155,6 +167,7 @@ using ((auth.jwt() ->> 'is_master_admin')::boolean = true);
 ```
 
 ### 4.3 Policies — leads
+
 ```sql
 create policy "leads: read by tenant"
 on leads
@@ -185,6 +198,7 @@ using (tenant_id = (auth.jwt() ->> 'tenant_id')::uuid);
 ```
 
 ### 4.4 Policies — teams
+
 ```sql
 create policy "teams: read by tenant"
 on teams
@@ -199,6 +213,7 @@ with check (tenant_id = (auth.jwt() ->> 'tenant_id')::uuid);
 ```
 
 ### 4.5 Policies — team_members
+
 ```sql
 create policy "team_members: read by tenant"
 on team_members
@@ -215,6 +230,7 @@ with check ((auth.jwt() ->> 'role') = 'admin');
 ---
 
 ## 5) Observações finais
-- As políticas acima assumem que o **JWT carrega `tenant_id`**.  
-- Para convites, use uma tabela `invites` com `tenant_id`, `email`, `role`, `expires_at`.  
+
+- As políticas acima assumem que o **JWT carrega `tenant_id`**.
+- Para convites, use uma tabela `invites` com `tenant_id`, `email`, `role`, `expires_at`.
 - Para RBAC granular, adicionar tabela `roles` e `permissions`.

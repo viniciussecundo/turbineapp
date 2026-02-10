@@ -3,6 +3,7 @@
 // ========================================
 
 import { supabase } from "@/lib/supabase";
+import { isAbortError } from "@/lib/utils";
 import type {
   Transaction,
   TransactionStatus,
@@ -12,17 +13,22 @@ import type {
 // Mapeamento de campos (camelCase para snake_case)
 const toDbTransaction = (
   transaction: Partial<Transaction>,
-): Record<string, unknown> => ({
-  type: transaction.type,
-  description: transaction.description,
-  value: transaction.value,
-  date: transaction.date,
-  category: transaction.category,
-  status: transaction.status,
-  client_id: transaction.clientId || null,
-  budget_id: transaction.budgetId || null,
-  notes: transaction.notes || null,
-});
+  tenantId?: string,
+): Record<string, unknown> => {
+  const data: Record<string, unknown> = {
+    type: transaction.type,
+    description: transaction.description,
+    value: transaction.value,
+    date: transaction.date,
+    category: transaction.category,
+    status: transaction.status,
+    client_id: transaction.clientId || null,
+    budget_id: transaction.budgetId || null,
+    notes: transaction.notes || null,
+  };
+  if (tenantId) data.tenant_id = tenantId;
+  return data;
+};
 
 const fromDbTransaction = (
   dbTransaction: Record<string, unknown>,
@@ -50,7 +56,8 @@ export const transactionService = {
       .order("date", { ascending: false });
 
     if (error) {
-      console.error("Erro ao buscar transações:", error);
+      if (!isAbortError(error))
+        console.error("Erro ao buscar transações:", error);
       return [];
     }
 
@@ -116,8 +123,9 @@ export const transactionService = {
    */
   async create(
     transaction: Omit<Transaction, "id">,
+    tenantId?: string,
   ): Promise<Transaction | null> {
-    const dbData = toDbTransaction(transaction);
+    const dbData = toDbTransaction(transaction, tenantId);
 
     // Remove campos undefined
     Object.keys(dbData).forEach((key) => {

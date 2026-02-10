@@ -29,6 +29,8 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useData } from "@/contexts/DataContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions, routeToModule } from "@/hooks/use-permissions";
 
 const navItems = [
   { path: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -37,12 +39,28 @@ const navItems = [
   { path: "/financas", label: "Finanças", icon: Wallet },
   { path: "/orcamentos", label: "Orçamentos", icon: FileText },
   { path: "/relatorios", label: "Relatórios", icon: BarChart3 },
+  { path: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 
 const quickAccess = [
-  { label: "Novo Cliente", path: "/clientes?new=true", icon: UserPlus },
-  { label: "Novo Lead", path: "/leads?new=true", icon: Target },
-  { label: "Novo Orçamento", path: "/orcamentos?new=true", icon: FilePlus },
+  {
+    label: "Novo Cliente",
+    path: "/clientes?new=true",
+    icon: UserPlus,
+    module: "clients" as const,
+  },
+  {
+    label: "Novo Lead",
+    path: "/leads?new=true",
+    icon: Target,
+    module: "leads" as const,
+  },
+  {
+    label: "Novo Orçamento",
+    path: "/orcamentos?new=true",
+    icon: FilePlus,
+    module: "budgets" as const,
+  },
 ];
 
 const activityIcons = {
@@ -60,6 +78,8 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
+  const { user, profile } = useAuth();
+  const { canAccessModule, can } = usePermissions();
   const [showActivities, setShowActivities] = useState(true);
   const {
     getUnviewedLeadsCount,
@@ -127,53 +147,60 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* Navigation */}
         <div className="flex-1 overflow-y-auto py-6 px-3">
           <nav className="space-y-1">
-            {navItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              const Icon = item.icon;
-              const isLeads = item.path === "/leads";
-              const hasNotification = isLeads && unviewedLeadsCount > 0;
+            {navItems
+              .filter((item) => {
+                const mod = routeToModule(item.path);
+                return !mod || canAccessModule(mod);
+              })
+              .map((item) => {
+                const isActive = location.pathname === item.path;
+                const Icon = item.icon;
+                const isLeads = item.path === "/leads";
+                const hasNotification = isLeads && unviewedLeadsCount > 0;
 
-              return (
-                <Link key={item.path} to={item.path} onClick={onClose}>
-                  <div
-                    className={cn(
-                      "group flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                      isActive
-                        ? "bg-sidebar-accent text-primary shadow-sm ring-1 ring-white/5"
-                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-white",
-                      hasNotification && !isActive && "ring-1 ring-primary/30",
-                    )}
-                  >
-                    <div className="relative">
-                      <Icon
-                        className={cn(
-                          "h-4 w-4 transition-colors",
-                          isActive
-                            ? "text-primary"
-                            : "text-muted-foreground group-hover:text-white",
-                          hasNotification && "text-primary",
+                return (
+                  <Link key={item.path} to={item.path} onClick={onClose}>
+                    <div
+                      className={cn(
+                        "group flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                        isActive
+                          ? "bg-sidebar-accent text-primary shadow-sm ring-1 ring-white/5"
+                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-white",
+                        hasNotification &&
+                          !isActive &&
+                          "ring-1 ring-primary/30",
+                      )}
+                    >
+                      <div className="relative">
+                        <Icon
+                          className={cn(
+                            "h-4 w-4 transition-colors",
+                            isActive
+                              ? "text-primary"
+                              : "text-muted-foreground group-hover:text-white",
+                            hasNotification && "text-primary",
+                          )}
+                        />
+                        {hasNotification && (
+                          <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                          </span>
                         )}
-                      />
+                      </div>
+                      {item.label}
                       {hasNotification && (
-                        <span className="absolute -top-1 -right-1 flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                        </span>
+                        <Badge className="ml-auto h-5 px-1.5 text-xs bg-primary text-white">
+                          {unviewedLeadsCount}
+                        </Badge>
+                      )}
+                      {isActive && !hasNotification && (
+                        <ChevronRight className="ml-auto h-4 w-4 text-primary/50" />
                       )}
                     </div>
-                    {item.label}
-                    {hasNotification && (
-                      <Badge className="ml-auto h-5 px-1.5 text-xs bg-primary text-white">
-                        {unviewedLeadsCount}
-                      </Badge>
-                    )}
-                    {isActive && !hasNotification && (
-                      <ChevronRight className="ml-auto h-4 w-4 text-primary/50" />
-                    )}
-                  </div>
-                </Link>
-              );
-            })}
+                  </Link>
+                );
+              })}
           </nav>
 
           <Separator className="my-6 bg-sidebar-border" />
@@ -184,20 +211,22 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               Acesso Rápido
             </h4>
             <div className="space-y-1">
-              {quickAccess.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link key={item.label} to={item.path} onClick={onClose}>
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-start gap-3 text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-white h-9 px-3"
-                    >
-                      <Icon className="h-4 w-4 text-primary" />
-                      <span>{item.label}</span>
-                    </Button>
-                  </Link>
-                );
-              })}
+              {quickAccess
+                .filter((item) => can(item.module, "create"))
+                .map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link key={item.label} to={item.path} onClick={onClose}>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start gap-3 text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-white h-9 px-3"
+                      >
+                        <Icon className="h-4 w-4 text-primary" />
+                        <span>{item.label}</span>
+                      </Button>
+                    </Link>
+                  );
+                })}
             </div>
           </div>
 
@@ -306,24 +335,24 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* Footer */}
         <div className="border-t border-sidebar-border p-4">
-          <div className="flex items-center gap-3 rounded-lg bg-sidebar-accent/50 p-3 hover:bg-sidebar-accent transition-colors cursor-pointer group">
-            <div className="h-9 w-9 overflow-hidden rounded-full border border-white/10">
-              <img
-                alt="Admin"
-                className="h-full w-full object-cover"
-                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-              />
+          <Link to="/configuracoes" onClick={onClose}>
+            <div className="flex items-center gap-3 rounded-lg bg-sidebar-accent/50 p-3 hover:bg-sidebar-accent transition-colors cursor-pointer group">
+              <div className="h-9 w-9 flex items-center justify-center rounded-full border border-white/10 bg-primary/20 text-primary font-semibold text-sm">
+                {(profile?.fullName ?? user?.email ?? "U")
+                  .charAt(0)
+                  .toUpperCase()}
+              </div>
+              <div className="flex-1 overflow-hidden">
+                <p className="truncate text-sm font-medium text-white group-hover:text-primary transition-colors">
+                  {profile?.fullName ?? "Usuário"}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {user?.email ?? ""}
+                </p>
+              </div>
+              <Settings className="h-4 w-4 text-muted-foreground group-hover:text-white transition-colors" />
             </div>
-            <div className="flex-1 overflow-hidden">
-              <p className="truncate text-sm font-medium text-white group-hover:text-primary transition-colors">
-                Admin User
-              </p>
-              <p className="truncate text-xs text-muted-foreground">
-                admin@turbine.tech
-              </p>
-            </div>
-            <Settings className="h-4 w-4 text-muted-foreground group-hover:text-white transition-colors" />
-          </div>
+          </Link>
         </div>
       </aside>
     </>

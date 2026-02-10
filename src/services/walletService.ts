@@ -3,6 +3,7 @@
 // ========================================
 
 import { supabase } from "@/lib/supabase";
+import { isAbortError } from "@/lib/utils";
 import type { ClientWallet, WalletMovement } from "@/contexts/DataContext";
 
 // Mapeamento de campos para Wallet
@@ -39,7 +40,8 @@ export const walletService = {
       .order("created_at", { ascending: false });
 
     if (walletsError) {
-      console.error("Erro ao buscar carteiras:", walletsError);
+      if (!isAbortError(walletsError))
+        console.error("Erro ao buscar carteiras:", walletsError);
       return [];
     }
 
@@ -142,19 +144,23 @@ export const walletService = {
     clientId: number,
     initialBalance = 0,
     initialMovement?: Omit<WalletMovement, "id">,
+    tenantId?: string,
   ): Promise<ClientWallet | null> {
     // Verificar se já existe
     const existing = await this.getByClientId(clientId);
     if (existing) return existing;
 
     // Criar carteira (com saldo 0 inicialmente, será atualizado pelo trigger)
+    const insertData: Record<string, unknown> = {
+      client_id: clientId,
+      balance: 0,
+      created_at: new Date().toISOString().split("T")[0],
+    };
+    if (tenantId) insertData.tenant_id = tenantId;
+
     const { data: wallet, error: walletError } = await supabase
       .from("wallets")
-      .insert({
-        client_id: clientId,
-        balance: 0,
-        created_at: new Date().toISOString().split("T")[0],
-      })
+      .insert(insertData)
       .select()
       .single();
 

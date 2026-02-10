@@ -3,26 +3,34 @@
 // ========================================
 
 import { supabase } from "@/lib/supabase";
+import { isAbortError } from "@/lib/utils";
 import type { Lead, LeadStatus } from "@/contexts/DataContext";
 
 // Mapeamento de campos (camelCase para snake_case)
-const toDbLead = (lead: Partial<Lead>): Record<string, unknown> => ({
-  name: lead.name,
-  email: lead.email,
-  phone: lead.phone,
-  company: lead.company || null,
-  status: lead.status,
-  origin: lead.origin,
-  value: lead.value || null,
-  created_at: lead.createdAt,
-  notes: lead.notes || null,
-  converted_to_client_id: lead.convertedToClientId || null,
-  self_registered: lead.selfRegistered || false,
-  viewed: lead.viewed || false,
-  followers: lead.followers || null,
-  posts: lead.posts || null,
-  monthly_budget: lead.monthlyBudget || null,
-});
+const toDbLead = (
+  lead: Partial<Lead>,
+  tenantId?: string,
+): Record<string, unknown> => {
+  const data: Record<string, unknown> = {
+    name: lead.name,
+    email: lead.email,
+    phone: lead.phone,
+    company: lead.company || null,
+    status: lead.status,
+    origin: lead.origin,
+    value: lead.value || null,
+    created_at: lead.createdAt,
+    notes: lead.notes || null,
+    converted_to_client_id: lead.convertedToClientId || null,
+    self_registered: lead.selfRegistered || false,
+    viewed: lead.viewed || false,
+    followers: lead.followers || null,
+    posts: lead.posts || null,
+    monthly_budget: lead.monthlyBudget || null,
+  };
+  if (tenantId) data.tenant_id = tenantId;
+  return data;
+};
 
 const fromDbLead = (dbLead: Record<string, unknown>): Lead => ({
   id: dbLead.id as number,
@@ -54,7 +62,7 @@ export const leadService = {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Erro ao buscar leads:", error);
+      if (!isAbortError(error)) console.error("Erro ao buscar leads:", error);
       return [];
     }
 
@@ -85,14 +93,18 @@ export const leadService = {
   async create(
     lead: Omit<Lead, "id" | "createdAt" | "status">,
     selfRegistered = false,
+    tenantId?: string,
   ): Promise<Lead | null> {
-    const dbData = toDbLead({
-      ...lead,
-      status: "novo",
-      createdAt: new Date().toISOString().split("T")[0],
-      selfRegistered,
-      viewed: false,
-    });
+    const dbData = toDbLead(
+      {
+        ...lead,
+        status: "novo",
+        createdAt: new Date().toISOString().split("T")[0],
+        selfRegistered,
+        viewed: false,
+      },
+      tenantId,
+    );
 
     // Remove campos undefined
     Object.keys(dbData).forEach((key) => {

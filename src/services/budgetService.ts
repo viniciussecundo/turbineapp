@@ -3,24 +3,32 @@
 // ========================================
 
 import { supabase } from "@/lib/supabase";
+import { isAbortError } from "@/lib/utils";
 import type { Budget, BudgetStatus, BudgetItem } from "@/contexts/DataContext";
 
 // Mapeamento de campos (camelCase para snake_case)
-const toDbBudget = (budget: Partial<Budget>): Record<string, unknown> => ({
-  code: budget.code,
-  client_id: budget.clientId,
-  title: budget.title,
-  description: budget.description || null,
-  items: budget.items || [],
-  total_value: budget.totalValue,
-  status: budget.status,
-  created_at: budget.createdAt,
-  valid_until: budget.validUntil,
-  sent_at: budget.sentAt || null,
-  approved_at: budget.approvedAt || null,
-  rejected_at: budget.rejectedAt || null,
-  notes: budget.notes || null,
-});
+const toDbBudget = (
+  budget: Partial<Budget>,
+  tenantId?: string,
+): Record<string, unknown> => {
+  const data: Record<string, unknown> = {
+    code: budget.code,
+    client_id: budget.clientId,
+    title: budget.title,
+    description: budget.description || null,
+    items: budget.items || [],
+    total_value: budget.totalValue,
+    status: budget.status,
+    created_at: budget.createdAt,
+    valid_until: budget.validUntil,
+    sent_at: budget.sentAt || null,
+    approved_at: budget.approvedAt || null,
+    rejected_at: budget.rejectedAt || null,
+    notes: budget.notes || null,
+  };
+  if (tenantId) data.tenant_id = tenantId;
+  return data;
+};
 
 const fromDbBudget = (dbBudget: Record<string, unknown>): Budget => ({
   id: dbBudget.id as number,
@@ -50,7 +58,8 @@ export const budgetService = {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Erro ao buscar orçamentos:", error);
+      if (!isAbortError(error))
+        console.error("Erro ao buscar orçamentos:", error);
       return [];
     }
 
@@ -133,13 +142,17 @@ export const budgetService = {
    */
   async create(
     budget: Omit<Budget, "id" | "code" | "createdAt">,
+    tenantId?: string,
   ): Promise<Budget | null> {
     const code = await this.generateCode();
-    const dbData = toDbBudget({
-      ...budget,
-      code,
-      createdAt: new Date().toISOString().split("T")[0],
-    });
+    const dbData = toDbBudget(
+      {
+        ...budget,
+        code,
+        createdAt: new Date().toISOString().split("T")[0],
+      },
+      tenantId,
+    );
 
     // Remove campos undefined
     Object.keys(dbData).forEach((key) => {

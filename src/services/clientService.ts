@@ -3,6 +3,7 @@
 // ========================================
 
 import { supabase } from "@/lib/supabase";
+import { isAbortError } from "@/lib/utils";
 import type {
   Client,
   ClientStatus,
@@ -11,21 +12,28 @@ import type {
 } from "@/contexts/DataContext";
 
 // Mapeamento de campos (camelCase para snake_case)
-const toDbClient = (client: Partial<Client>): Record<string, unknown> => ({
-  name: client.name,
-  email: client.email,
-  phone: client.phone,
-  status: client.status,
-  projects: client.projects,
-  value: client.value,
-  avatar: client.avatar || null,
-  responsible: client.responsible || null,
-  social_media: client.socialMedia || null,
-  lead_id: client.leadId || null,
-  origin: client.origin || null,
-  converted_at: client.convertedAt || null,
-  profile_analysis: client.profileAnalysis || null,
-});
+const toDbClient = (
+  client: Partial<Client>,
+  tenantId?: string,
+): Record<string, unknown> => {
+  const data: Record<string, unknown> = {
+    name: client.name,
+    email: client.email,
+    phone: client.phone,
+    status: client.status,
+    projects: client.projects,
+    value: client.value,
+    avatar: client.avatar || null,
+    responsible: client.responsible || null,
+    social_media: client.socialMedia || null,
+    lead_id: client.leadId || null,
+    origin: client.origin || null,
+    converted_at: client.convertedAt || null,
+    profile_analysis: client.profileAnalysis || null,
+  };
+  if (tenantId) data.tenant_id = tenantId;
+  return data;
+};
 
 const fromDbClient = (dbClient: Record<string, unknown>): Client => ({
   id: dbClient.id as number,
@@ -55,7 +63,8 @@ export const clientService = {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Erro ao buscar clientes:", error);
+      if (!isAbortError(error))
+        console.error("Erro ao buscar clientes:", error);
       return [];
     }
 
@@ -102,8 +111,11 @@ export const clientService = {
   /**
    * Cria novo cliente
    */
-  async create(client: Omit<Client, "id">): Promise<Client | null> {
-    const dbData = toDbClient(client);
+  async create(
+    client: Omit<Client, "id">,
+    tenantId?: string,
+  ): Promise<Client | null> {
+    const dbData = toDbClient(client, tenantId);
 
     // Remove campos undefined
     Object.keys(dbData).forEach((key) => {

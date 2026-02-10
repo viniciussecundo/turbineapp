@@ -14,6 +14,7 @@ import { transactionService } from "@/services/transactionService";
 import { walletService } from "@/services/walletService";
 import { budgetService } from "@/services/budgetService";
 import { activityService } from "@/services/activityService";
+import { isAbortError } from "@/lib/utils";
 
 // Types
 export type LeadStatus = "novo" | "contato" | "proposta" | "fechado";
@@ -235,6 +236,7 @@ interface DataContextType {
   addLead: (
     lead: Omit<Lead, "id" | "createdAt" | "status">,
     selfRegistered?: boolean,
+    overrideTenantId?: string,
   ) => Promise<void>;
   updateLeadStatus: (leadId: number, status: LeadStatus) => Promise<void>;
   markLeadAsViewed: (leadId: number) => Promise<void>;
@@ -326,7 +328,7 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  const { session } = useAuth();
+  const { session, tenantId } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
@@ -362,7 +364,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setBudgets(budgetsData);
       setActivities(activitiesData);
     } catch (error) {
-      console.error("Erro ao carregar dados:", error);
+      if (!isAbortError(error)) {
+        console.error("Erro ao carregar dados:", error);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -393,8 +397,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const addLead = async (
     leadData: Omit<Lead, "id" | "createdAt" | "status">,
     selfRegistered = false,
+    overrideTenantId?: string,
   ) => {
-    const newLead = await leadService.create(leadData, selfRegistered);
+    const tid = overrideTenantId || tenantId || undefined;
+    const newLead = await leadService.create(leadData, selfRegistered, tid);
     if (newLead) {
       setLeads((prev) => [newLead, ...prev]);
     }
@@ -484,7 +490,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
       ...clientData,
     };
 
-    const newClient = await clientService.create(newClientData);
+    const newClient = await clientService.create(
+      newClientData,
+      tenantId || undefined,
+    );
     if (!newClient) return null;
 
     setClients((prev) => [newClient, ...prev]);
@@ -506,7 +515,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // CLIENTS
   // ========================================
   const addClient = async (clientData: Omit<Client, "id">) => {
-    const newClient = await clientService.create(clientData);
+    const newClient = await clientService.create(
+      clientData,
+      tenantId || undefined,
+    );
     if (newClient) {
       setClients((prev) => [newClient, ...prev]);
     }
@@ -587,7 +599,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // TRANSACTIONS
   // ========================================
   const addTransaction = async (transactionData: Omit<Transaction, "id">) => {
-    const newTransaction = await transactionService.create(transactionData);
+    const newTransaction = await transactionService.create(
+      transactionData,
+      tenantId || undefined,
+    );
     if (newTransaction) {
       setTransactions((prev) => [newTransaction, ...prev]);
     }
@@ -632,6 +647,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       clientId,
       initialDeposit,
       initialMovement,
+      tenantId || undefined,
     );
     if (newWallet) {
       setWallets((prev) => [...prev, newWallet]);
@@ -678,7 +694,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const addBudget = async (
     budgetData: Omit<Budget, "id" | "code" | "createdAt">,
   ): Promise<Budget | null> => {
-    const newBudget = await budgetService.create(budgetData);
+    const newBudget = await budgetService.create(
+      budgetData,
+      tenantId || undefined,
+    );
     if (newBudget) {
       setBudgets((prev) => [newBudget, ...prev]);
     }
@@ -735,17 +754,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
           : "Serviço de Cliente";
 
         // Criar transação de receita
-        const newTransaction = await transactionService.create({
-          type: "income",
-          description: `${budget.code} - ${budget.title}`,
-          value: budget.totalValue,
-          date: now,
-          category,
-          status: "pending",
-          clientId: budget.clientId,
-          budgetId: budget.id,
-          notes: `Receita gerada automaticamente pela aprovação do orçamento ${budget.code}${client ? ` - Cliente: ${client.name}` : ""}`,
-        });
+        const newTransaction = await transactionService.create(
+          {
+            type: "income",
+            description: `${budget.code} - ${budget.title}`,
+            value: budget.totalValue,
+            date: now,
+            category,
+            status: "pending",
+            clientId: budget.clientId,
+            budgetId: budget.id,
+            notes: `Receita gerada automaticamente pela aprovação do orçamento ${budget.code}${client ? ` - Cliente: ${client.name}` : ""}`,
+          },
+          tenantId || undefined,
+        );
 
         if (newTransaction) {
           setTransactions((prev) => [newTransaction, ...prev]);
@@ -781,7 +803,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const addActivity = async (
     activityData: Omit<Activity, "id" | "timestamp" | "read">,
   ) => {
-    const newActivity = await activityService.create(activityData);
+    const newActivity = await activityService.create(
+      activityData,
+      tenantId || undefined,
+    );
     if (newActivity) {
       setActivities((prev) => [newActivity, ...prev].slice(0, 50));
     }

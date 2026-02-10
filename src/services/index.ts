@@ -9,6 +9,7 @@ export { transactionService } from "./transactionService";
 export { walletService } from "./walletService";
 export { budgetService } from "./budgetService";
 export { activityService } from "./activityService";
+export * from "./profileService";
 
 // Re-export Supabase client and storage
 export { supabase, isSupabaseConfigured } from "@/lib/supabase";

@@ -3,6 +3,7 @@
 // ========================================
 
 import { supabase } from "@/lib/supabase";
+import { isAbortError } from "@/lib/utils";
 import type { Activity, ActivityType } from "@/contexts/DataContext";
 
 // Mapeamento de campos
@@ -29,7 +30,8 @@ export const activityService = {
       .limit(50);
 
     if (error) {
-      console.error("Erro ao buscar atividades:", error);
+      if (!isAbortError(error))
+        console.error("Erro ao buscar atividades:", error);
       return [];
     }
 
@@ -41,18 +43,22 @@ export const activityService = {
    */
   async create(
     activity: Omit<Activity, "id" | "timestamp" | "read">,
+    tenantId?: string,
   ): Promise<Activity | null> {
+    const insertData: Record<string, unknown> = {
+      type: activity.type,
+      title: activity.title,
+      description: activity.description,
+      icon: activity.icon || null,
+      link: activity.link || null,
+      read: false,
+      timestamp: new Date().toISOString(),
+    };
+    if (tenantId) insertData.tenant_id = tenantId;
+
     const { data, error } = await supabase
       .from("activities")
-      .insert({
-        type: activity.type,
-        title: activity.title,
-        description: activity.description,
-        icon: activity.icon || null,
-        link: activity.link || null,
-        read: false,
-        timestamp: new Date().toISOString(),
-      })
+      .insert(insertData)
       .select()
       .single();
 

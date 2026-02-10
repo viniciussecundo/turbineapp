@@ -1,6 +1,5 @@
 // ========================================
-// Tipos do Supabase Database
-// Gerado manualmente baseado no schema
+// Tipos do Supabase Database — Multi-tenant
 // ========================================
 
 export type Json =
@@ -11,6 +10,7 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
+// Enums
 export type LeadStatus = "novo" | "contato" | "proposta" | "fechado";
 export type LeadOrigin =
   | "site"
@@ -31,13 +31,70 @@ export type ActivityType =
   | "budget"
   | "wallet";
 export type WalletMovementType = "deposit" | "withdrawal";
+export type UserRole = "admin" | "sales" | "finance" | "viewer";
+export type ProfileStatus = "active" | "pending" | "blocked";
+export type TenantStatus = "active" | "suspended" | "cancelled";
+export type TenantPlan = "starter" | "pro" | "enterprise";
 
 export interface Database {
   public: {
     Tables: {
+      tenants: {
+        Row: {
+          id: string;
+          name: string;
+          plan: TenantPlan;
+          status: TenantStatus;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          plan?: TenantPlan;
+          status?: TenantStatus;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          plan?: TenantPlan;
+          status?: TenantStatus;
+          created_at?: string;
+        };
+      };
+      profiles: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          full_name: string | null;
+          role: UserRole;
+          status: ProfileStatus;
+          is_master_admin: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          tenant_id: string;
+          full_name?: string | null;
+          role?: UserRole;
+          status?: ProfileStatus;
+          is_master_admin?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string;
+          full_name?: string | null;
+          role?: UserRole;
+          status?: ProfileStatus;
+          is_master_admin?: boolean;
+          created_at?: string;
+        };
+      };
       leads: {
         Row: {
           id: number;
+          tenant_id: string;
           name: string;
           email: string;
           phone: string;
@@ -56,6 +113,7 @@ export interface Database {
         };
         Insert: {
           id?: number;
+          tenant_id: string;
           name: string;
           email: string;
           phone: string;
@@ -74,6 +132,7 @@ export interface Database {
         };
         Update: {
           id?: number;
+          tenant_id?: string;
           name?: string;
           email?: string;
           phone?: string;
@@ -94,6 +153,7 @@ export interface Database {
       clients: {
         Row: {
           id: number;
+          tenant_id: string;
           name: string;
           email: string;
           phone: string;
@@ -111,6 +171,7 @@ export interface Database {
         };
         Insert: {
           id?: number;
+          tenant_id: string;
           name: string;
           email: string;
           phone: string;
@@ -128,6 +189,7 @@ export interface Database {
         };
         Update: {
           id?: number;
+          tenant_id?: string;
           name?: string;
           email?: string;
           phone?: string;
@@ -147,6 +209,7 @@ export interface Database {
       transactions: {
         Row: {
           id: number;
+          tenant_id: string;
           type: TransactionType;
           description: string;
           value: number;
@@ -160,6 +223,7 @@ export interface Database {
         };
         Insert: {
           id?: number;
+          tenant_id: string;
           type: TransactionType;
           description: string;
           value: number;
@@ -173,6 +237,7 @@ export interface Database {
         };
         Update: {
           id?: number;
+          tenant_id?: string;
           type?: TransactionType;
           description?: string;
           value?: number;
@@ -188,18 +253,21 @@ export interface Database {
       wallets: {
         Row: {
           id: number;
+          tenant_id: string;
           client_id: number;
           balance: number;
           created_at: string;
         };
         Insert: {
           id?: number;
+          tenant_id: string;
           client_id: number;
           balance?: number;
           created_at?: string;
         };
         Update: {
           id?: number;
+          tenant_id?: string;
           client_id?: number;
           balance?: number;
           created_at?: string;
@@ -237,6 +305,7 @@ export interface Database {
       budgets: {
         Row: {
           id: number;
+          tenant_id: string;
           code: string;
           client_id: number;
           title: string;
@@ -253,6 +322,7 @@ export interface Database {
         };
         Insert: {
           id?: number;
+          tenant_id: string;
           code: string;
           client_id: number;
           title: string;
@@ -269,6 +339,7 @@ export interface Database {
         };
         Update: {
           id?: number;
+          tenant_id?: string;
           code?: string;
           client_id?: number;
           title?: string;
@@ -287,6 +358,7 @@ export interface Database {
       activities: {
         Row: {
           id: number;
+          tenant_id: string;
           type: ActivityType;
           title: string;
           description: string;
@@ -298,6 +370,7 @@ export interface Database {
         };
         Insert: {
           id?: number;
+          tenant_id: string;
           type: ActivityType;
           title: string;
           description: string;
@@ -309,6 +382,7 @@ export interface Database {
         };
         Update: {
           id?: number;
+          tenant_id?: string;
           type?: ActivityType;
           title?: string;
           description?: string;
@@ -324,7 +398,45 @@ export interface Database {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      get_tenant_id: {
+        Args: Record<PropertyKey, never>;
+        Returns: string;
+      };
+      get_user_role: {
+        Args: Record<PropertyKey, never>;
+        Returns: UserRole;
+      };
+      is_master_admin: {
+        Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
+      create_tenant_with_profile: {
+        Args: {
+          p_tenant_name: string;
+          p_full_name: string;
+        };
+        Returns: Json;
+      };
+      update_member_role: {
+        Args: {
+          p_user_id: string;
+          p_role: UserRole;
+        };
+        Returns: undefined;
+      };
+      update_member_status: {
+        Args: {
+          p_user_id: string;
+          p_status: ProfileStatus;
+        };
+        Returns: undefined;
+      };
+      remove_tenant_member: {
+        Args: {
+          p_user_id: string;
+        };
+        Returns: undefined;
+      };
     };
     Enums: {
       lead_status: LeadStatus;
@@ -336,6 +448,10 @@ export interface Database {
       client_goal: ClientGoal;
       activity_type: ActivityType;
       wallet_movement_type: WalletMovementType;
+      user_role: UserRole;
+      profile_status: ProfileStatus;
+      tenant_status: TenantStatus;
+      tenant_plan: TenantPlan;
     };
   };
 }
