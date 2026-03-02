@@ -11,7 +11,7 @@ Transformar o TurbineApp em um CRM SaaS confiável, seguro e escalável, com aut
 
 ---
 
-## 2) Objetivos (Goals)
+## 2) Objetivos
 1. **Autenticação segura** com sessões e revogação.
 2. **Autorização por papéis** (RBAC) e políticas.
 3. **Isolamento total por tenant** (dados e permissões).
@@ -21,7 +21,7 @@ Transformar o TurbineApp em um CRM SaaS confiável, seguro e escalável, com aut
 
 ---
 
-## 3) Não‑objetivos (Non‑Goals)
+## 3) Não‑objetivos
 - SSO corporativo (SAML/SCIM) na primeira versão.
 - Migração automática de dados legados no MVP.
 - Marketplace de integrações no MVP.
@@ -37,10 +37,10 @@ Transformar o TurbineApp em um CRM SaaS confiável, seguro e escalável, com aut
 
 ## 5) Escopo funcional — Autenticação & Autorização
 
-### 5.1 Autenticação (Login/Session)
+### 5.1 Autenticação (Login/Sessão)
 **RF‑AUTH‑01** — Login com e‑mail e senha.  
 **RF‑AUTH‑02** — Reset de senha por e‑mail.  
-**RF‑AUTH‑03** — Sessões com refresh token.  
+**RF‑AUTH‑03** — Sessões com token de atualização (refresh token).  
 **RF‑AUTH‑04** — Logout global (revogar sessões ativas).  
 **RF‑AUTH‑05** — MFA opcional (TOTP) no plano Pro.  
 
@@ -72,13 +72,13 @@ Transformar o TurbineApp em um CRM SaaS confiável, seguro e escalável, com aut
 ---
 
 ## 6) Requisitos não‑funcionais
-1. **Segurança:** criptografia em trânsito, rate‑limit no login.
+1. **Segurança:** criptografia em trânsito, limite de tentativas no login.
 2. **Confiabilidade:** auditoria de ações críticas (CRUD financeiro).
 3. **Escalabilidade:** separar auth e core CRM quando crescer.
 
 ---
 
-## 7) Fluxos detalhados (Auth‑first)
+## 7) Fluxos detalhados (autenticação primeiro)
 
 ### 7.1 Login
 1. Usuário envia e‑mail/senha.  
@@ -135,7 +135,7 @@ Transformar o TurbineApp em um CRM SaaS confiável, seguro e escalável, com aut
 **Fase 2 — Multi‑tenant e RBAC:** tenant_id, roles, guardas. ✅ **CONCLUÍDA**  
 **Fase 3 — Times e colaboração:** times, compartilhamento, convites. ⬅️ **PRÓXIMO PASSO**  
 **Fase 4 — Auditoria:** logs e trilha para operações críticas.  
-**Fase 5 — Billing:** planos e assinatura.  
+**Fase 5 — Faturamento:** planos e assinatura.  
 
 ---
 

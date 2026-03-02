@@ -4,7 +4,7 @@ Este documento complementa o PRD e define:
 
 1. backlog detalhado com tarefas e estimativas;
 2. escolha do provedor de autenticação (Supabase);
-3. desenho do schema multi‑tenant + RLS (Row Level Security).
+3. desenho do schema multi‑tenant + RLS (Segurança em Nível de Linha).
 
 > **Última atualização:** 2026‑03‑02 — status de implementação revisado.
 
@@ -21,7 +21,7 @@ Motivos: já existe cliente Supabase no projeto, reduz custo e tempo de integra�
 
 ## 2) Backlog detalhado (com estimativas)
 
-Estimativas em **story points (SP)**.
+Estimativas em **pontos de história (SP)**.
 
 ### Épico A — Auth básico (total ~13 SP) ✅ CONCLUÍDO
 
@@ -162,7 +162,7 @@ create index on leads(team_id);
 
 ---
 
-## 4) RLS (Row Level Security)
+## 4) RLS (Segurança em Nível de Linha)
 
 ### 4.1 Habilitar RLS
 

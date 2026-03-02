@@ -30,7 +30,7 @@ TurbineApp é um sistema de CRM moderno e intuitivo para gerenciar seu funil de 
 
 ## 🛠️ Tecnologias Utilizadas
 
-- **Vite** — Build tool rápido
+- **Vite** — Ferramenta de build rápida
 - **TypeScript** — Tipagem estática
 - **React** — Biblioteca de UI
 - **Supabase** — Auth, banco de dados (Postgres) e RLS
@@ -105,7 +105,7 @@ src/
 | 2 | Multi‑tenant e RBAC | ✅ Concluída |
 | 3 | Times e colaboração (times, convites) | ⬅️ Próximo passo |
 | 4 | Auditoria (logs de ações críticas) | Pendente |
-| 5 | Billing (planos e assinatura) | Pendente |
+| 5 | Faturamento (planos e assinatura) | Pendente |
 
 > Para detalhes completos do backlog, consulte `docs/saas-auth-backlog-schema.md`.
 

@@ -1,4 +1,4 @@
-# Documentação das tecnologias do projeto
+# Documentação das Tecnologias do Projeto
 
 Este arquivo centraliza links oficiais de documentação para as tecnologias usadas no projeto, facilitando consultas futuras.
 
@@ -7,7 +7,7 @@ Este arquivo centraliza links oficiais de documentação para as tecnologias usa
 - TypeScript: https://www.typescriptlang.org/docs/
 - Vite: https://vitejs.dev/guide/
 
-## UI e componentes
+## Interface e componentes
 - shadcn/ui: https://ui.shadcn.com/docs
 - Radix UI: https://www.radix-ui.com/primitives/docs/overview/introduction
 - Tailwind CSS: https://tailwindcss.com/docs
