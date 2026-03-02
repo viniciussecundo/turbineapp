@@ -218,7 +218,7 @@ export const transactionService = {
       return false;
     }
 
-    return Array.isArray(data) && data.length >= 0;
+    return data !== null && Array.isArray(data);
   },
 
   /**
