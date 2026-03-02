@@ -300,9 +300,12 @@ export default function Leads() {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (leadToDelete) {
-      deleteLead(leadToDelete.id);
+      const success = await deleteLead(leadToDelete.id);
+      if (!success) {
+        toast.error("Não foi possível excluir o lead. Verifique suas permissões.");
+      }
       setIsDeleteDialogOpen(false);
       setLeadToDelete(null);
     }

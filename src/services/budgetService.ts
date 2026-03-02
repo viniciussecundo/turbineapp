@@ -217,14 +217,18 @@ export const budgetService = {
    * Remove orçamento
    */
   async delete(id: number): Promise<boolean> {
-    const { error } = await supabase.from("budgets").delete().eq("id", id);
+    const { data, error } = await supabase
+      .from("budgets")
+      .delete()
+      .eq("id", id)
+      .select();
 
     if (error) {
       console.error("Erro ao remover orçamento:", error);
       return false;
     }
 
-    return true;
+    return Array.isArray(data) && data.length > 0;
   },
 };
 

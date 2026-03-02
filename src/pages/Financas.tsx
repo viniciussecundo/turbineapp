@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import {
   DollarSign,
   TrendingUp,
@@ -47,6 +48,7 @@ import {
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
 } from "@/contexts/DataContext";
+import { Can } from "@/components/auth/Can";
 
 export default function Financas() {
   const {
@@ -232,15 +234,19 @@ export default function Financas() {
     setIsDeleteOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (transactionToDelete) {
-      deleteTransaction(transactionToDelete.id);
+      const success = await deleteTransaction(transactionToDelete.id);
+      if (success) {
+        // Fechar detalhes expandidos se a transação deletada estava expandida
+        if (expandedTransactionId === transactionToDelete.id) {
+          setExpandedTransactionId(null);
+        }
+      } else {
+        toast.error("Não foi possível excluir a transação. Verifique suas permissões.");
+      }
       setIsDeleteOpen(false);
       setTransactionToDelete(null);
-      // Fechar detalhes expandidos se a transação deletada estava expandida
-      if (expandedTransactionId === transactionToDelete.id) {
-        setExpandedTransactionId(null);
-      }
     }
   };
 
@@ -859,30 +865,34 @@ export default function Financas() {
                               <Check className="h-4 w-4" />
                             </Button>
                           )}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:bg-primary/10 hover:text-primary"
-                            title="Editar Transação"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditTransaction(tx);
-                            }}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                            title="Excluir Transação"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteClick(tx);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <Can permission="finance.edit">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                              title="Editar Transação"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditTransaction(tx);
+                              }}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </Can>
+                          <Can permission="finance.delete">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                              title="Excluir Transação"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteClick(tx);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </Can>
                         </div>
                       </div>
 
