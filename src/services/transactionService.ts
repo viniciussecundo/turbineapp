@@ -189,31 +189,36 @@ export const transactionService = {
    * Remove transação
    */
   async delete(id: number): Promise<boolean> {
-    const { error } = await supabase.from("transactions").delete().eq("id", id);
+    const { data, error } = await supabase
+      .from("transactions")
+      .delete()
+      .eq("id", id)
+      .select();
 
     if (error) {
       console.error("Erro ao remover transação:", error);
       return false;
     }
 
-    return true;
+    return Array.isArray(data) && data.length > 0;
   },
 
   /**
    * Remove transações por budgetId
    */
   async deleteByBudgetId(budgetId: number): Promise<boolean> {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("transactions")
       .delete()
-      .eq("budget_id", budgetId);
+      .eq("budget_id", budgetId)
+      .select();
 
     if (error) {
       console.error("Erro ao remover transações do orçamento:", error);
       return false;
     }
 
-    return true;
+    return data !== null && Array.isArray(data);
   },
 
   /**

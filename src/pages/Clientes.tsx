@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { toast } from "sonner";
 import {
   Users,
   Plus,
@@ -330,15 +331,19 @@ export default function Clientes() {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (clientToDelete) {
-      deleteClient(clientToDelete.id);
+      const success = await deleteClient(clientToDelete.id);
+      if (success) {
+        // Se estiver expandido, fecha
+        if (expandedClientId === clientToDelete.id) {
+          setExpandedClientId(null);
+        }
+      } else {
+        toast.error("Não foi possível excluir o cliente. Verifique suas permissões.");
+      }
       setIsDeleteDialogOpen(false);
       setClientToDelete(null);
-      // Se estiver expandido, fecha
-      if (expandedClientId === clientToDelete.id) {
-        setExpandedClientId(null);
-      }
     }
   };
 

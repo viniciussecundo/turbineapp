@@ -263,9 +263,16 @@ export default function Orcamentos() {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (selectedBudget) {
-      deleteBudget(selectedBudget.id);
+      const success = await deleteBudget(selectedBudget.id);
+      if (!success) {
+        toast({
+          title: "Erro ao excluir",
+          description: "Não foi possível excluir o orçamento. Verifique suas permissões.",
+          variant: "destructive",
+        });
+      }
       setIsDeleteDialogOpen(false);
       setSelectedBudget(null);
     }

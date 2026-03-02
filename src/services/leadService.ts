@@ -205,14 +205,18 @@ export const leadService = {
    * Remove lead
    */
   async delete(id: number): Promise<boolean> {
-    const { error } = await supabase.from("leads").delete().eq("id", id);
+    const { data, error } = await supabase
+      .from("leads")
+      .delete()
+      .eq("id", id)
+      .select();
 
     if (error) {
       console.error("Erro ao remover lead:", error);
       return false;
     }
 
-    return true;
+    return Array.isArray(data) && data.length > 0;
   },
 };
 
