@@ -32,6 +32,7 @@ interface AuthContextValue {
   tenantId: string | null;
   isLoading: boolean;
   needsOnboarding: boolean;
+  isPasswordRecovery: boolean;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signOut: () => Promise<{ error?: string }>;
   createTenantProfile: (
@@ -65,6 +66,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
   // Carregar profile do Supabase (com try-catch para evitar travamento)
   const loadProfile = useCallback(async (userId: string) => {
@@ -126,8 +128,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // e substitui a necessidade de chamar getSession() separadamente.
     // Isso evita a race condition de duas fontes concorrentes.
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (_event, nextSession) => {
+      async (event, nextSession) => {
         if (!isMounted) return;
+
+        // Detectar fluxo de recuperação de senha
+        // O link do e-mail já redireciona para /update-password, então
+        // apenas atualizamos o estado sem forçar um novo redirecionamento.
+        if (event === "PASSWORD_RECOVERY") {
+          setIsPasswordRecovery(true);
+          setSession(nextSession);
+          setUser(nextSession?.user ?? null);
+          clearTimeout(safetyTimeout);
+          setIsLoading(false);
+          return;
+        }
+
+        // Limpar flag de recuperação quando o usuário faz sign in normal ou sai
+        if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+          setIsPasswordRecovery(false);
+        }
 
         // IMPORTANTE: carregar profile ANTES de expor session/user
         // para evitar needsOnboarding=true intermediário que causa
@@ -234,13 +253,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       tenantId: profile?.tenantId ?? null,
       isLoading,
       needsOnboarding,
+      isPasswordRecovery,
       signIn,
       signOut,
       createTenantProfile,
       refreshProfile,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [user, session, profile, isLoading, needsOnboarding, refreshProfile],
+    [user, session, profile, isLoading, needsOnboarding, isPasswordRecovery, refreshProfile],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

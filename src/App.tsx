@@ -10,6 +10,7 @@ import { PageTransition } from "./components/PageTransition";
 import { PrivateRoute } from "./components/auth/PrivateRoute";
 import { PublicRoute } from "./components/auth/PublicRoute";
 import { RoleRoute } from "./components/auth/RoleRoute";
+import { AdminRoute } from "./components/auth/AdminRoute";
 import Index from "./pages/Index";
 import Financas from "./pages/Financas";
 import Clientes from "./pages/Clientes";
@@ -23,6 +24,7 @@ import Login from "./pages/Login";
 import Onboarding from "./pages/Onboarding";
 import ResetPassword from "./pages/ResetPassword";
 import UpdatePassword from "./pages/UpdatePassword";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -54,6 +56,11 @@ const App = () => (
 
                 {/* Rotas internas - com layout + RBAC */}
                 <Route element={<PrivateRoute />}>
+                  {/* Painel Admin Master */}
+                  <Route element={<AdminRoute />}>
+                    <Route path="/admin" element={<Admin />} />
+                  </Route>
+
                   <Route element={<RoleRoute />}>
                     <Route element={<AppLayout />}>
                       <Route path="/" element={<Index />} />

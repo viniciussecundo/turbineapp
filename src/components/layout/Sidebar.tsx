@@ -22,6 +22,7 @@ import {
   UserCheck,
   Receipt,
   ChevronDown,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -334,7 +335,18 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
 
         {/* Footer */}
-        <div className="border-t border-sidebar-border p-4">
+        <div className="border-t border-sidebar-border p-4 space-y-2">
+          {/* Admin Master link */}
+          {profile?.isMasterAdmin && (
+            <Link to="/admin" onClick={onClose}>
+              <div className="flex items-center gap-3 rounded-lg bg-primary/10 border border-primary/20 p-2.5 hover:bg-primary/20 transition-colors cursor-pointer group mb-2">
+                <Shield className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-primary">
+                  Painel Admin
+                </span>
+              </div>
+            </Link>
+          )}
           <Link to="/configuracoes" onClick={onClose}>
             <div className="flex items-center gap-3 rounded-lg bg-sidebar-accent/50 p-3 hover:bg-sidebar-accent transition-colors cursor-pointer group">
               <div className="h-9 w-9 flex items-center justify-center rounded-full border border-white/10 bg-primary/20 text-primary font-semibold text-sm">
