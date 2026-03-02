@@ -1,29 +1,45 @@
 # 🚀 TurbineApp
 
-CRM completo para gestão de clientes e leads, desenvolvido com React + TypeScript.
+CRM SaaS multi‑tenant para gestão de clientes e leads, desenvolvido com React + TypeScript + Supabase.
 
 ## 📋 Sobre o Projeto
 
-TurbineApp é um sistema de CRM moderno e intuitivo para gerenciar seu funil de vendas, clientes e leads de forma eficiente.
+TurbineApp é um sistema de CRM moderno e intuitivo para gerenciar seu funil de vendas, clientes e leads de forma eficiente, com autenticação segura, multi‑tenancy e controle de acesso por papéis (RBAC).
 
 ### ✨ Funcionalidades
 
+#### Autenticação e Segurança
+- **Login com e‑mail/senha** via Supabase Auth
+- **Reset de senha** com link por e‑mail
+- **Sessão persistente** com refresh automático
+- **Guardas de rota** para proteger páginas internas
+- **Multi‑tenant** — isolamento total de dados por organização (RLS)
+- **RBAC** — papéis Admin, Vendas, Financeiro e Leitura
+
+#### CRM e Negócios
 - **Gestão de Leads**: Funil visual com status (Novo, Contato, Proposta, Fechado)
 - **Gestão de Clientes**: Cadastro completo com análise de perfil
-- **Link Compartilhável**: Página pública para auto-cadastro de leads (`/cadastro`)
-- **Persistência de Dados**: Dados salvos no LocalStorage
-- **Linhas Expansíveis**: Detalhes adicionais ao clicar em leads/clientes
-- **Campos de Tráfego**: Seguidores, posts, orçamento mensal
-- **Análise de Perfil**: Segmento, objetivo, público-alvo, score
+- **Orçamentos**: Criação, aprovação e geração de PDF
+- **Finanças**: Receitas, despesas e carteiras virtuais
+- **Relatórios**: Dashboard com KPIs e gráficos de receita
+- **Link Compartilhável**: Página pública para auto‑cadastro de leads (`/cadastro`)
+
+#### Administração
+- **Onboarding**: Criação de organização + usuário admin no primeiro acesso
+- **Admin Master (Turbine Tech)**: Painel global para validar/bloquear usuários e gerenciar organizações
 
 ## 🛠️ Tecnologias Utilizadas
 
-- **Vite** - Build tool rápido
-- **TypeScript** - Tipagem estática
-- **React** - Biblioteca de UI
-- **shadcn/ui** - Componentes de interface
-- **Tailwind CSS** - Estilização utilitária
-- **React Router** - Navegação
+- **Vite** — Build tool rápido
+- **TypeScript** — Tipagem estática
+- **React** — Biblioteca de UI
+- **Supabase** — Auth, banco de dados (Postgres) e RLS
+- **shadcn/ui** — Componentes de interface
+- **Tailwind CSS** — Estilização utilitária
+- **React Router** — Navegação
+- **React Hook Form + Zod** — Formulários e validação
+- **TanStack React Query** — Gerenciamento de estado assíncrono
+- **Vitest** — Testes
 
 ## 🚀 Como Executar
 
@@ -31,6 +47,7 @@ TurbineApp é um sistema de CRM moderno e intuitivo para gerenciar seu funil de 
 
 - Node.js instalado - [instalar com nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 - npm ou bun
+- Projeto Supabase configurado (variáveis de ambiente `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`)
 
 ### Instalação
 
@@ -56,17 +73,41 @@ O projeto estará disponível em `http://localhost:8081`
 src/
 ├── components/       # Componentes reutilizáveis
 │   ├── ui/          # Componentes shadcn/ui
+│   ├── auth/        # Guardas de rota (PrivateRoute, PublicRoute, AdminRoute, RoleRoute, Can)
 │   ├── layout/      # Layout (Sidebar, Header)
 │   └── dashboard/   # Componentes do dashboard
-├── contexts/        # Contextos React (DataContext)
+├── contexts/        # Contextos React
+│   ├── AuthContext   # Autenticação e sessão
+│   └── DataContext   # Dados de negócio (leads, clientes, etc.)
+├── hooks/           # Hooks customizados (permissões, mobile, toast)
 ├── pages/           # Páginas da aplicação
-│   ├── Index.tsx    # Dashboard
-│   ├── Leads.tsx    # Gestão de leads
-│   ├── Clientes.tsx # Gestão de clientes
-│   └── CadastroPublico.tsx # Página pública
-├── hooks/           # Hooks customizados
-└── lib/             # Utilitários
+│   ├── Login        # Tela de login
+│   ├── Index        # Dashboard
+│   ├── Leads        # Gestão de leads
+│   ├── Clientes     # Gestão de clientes
+│   ├── Orcamentos   # Orçamentos
+│   ├── Financas     # Finanças
+│   ├── Relatorios   # Relatórios
+│   ├── Settings     # Configurações
+│   ├── Admin        # Painel admin master
+│   ├── Onboarding   # Criação de organização
+│   └── CadastroPublico # Página pública de leads
+├── services/        # Serviços de acesso a dados (Supabase)
+├── types/           # Tipagens TypeScript
+└── lib/             # Utilitários e cliente Supabase
 ```
+
+## 📊 Status do Projeto
+
+| Fase | Descrição | Status |
+|------|-----------|--------|
+| 1 | Auth básico (login, sessão, reset, logout) | ✅ Concluída |
+| 2 | Multi‑tenant e RBAC | ✅ Concluída |
+| 3 | Times e colaboração (times, convites) | ⬅️ Próximo passo |
+| 4 | Auditoria (logs de ações críticas) | Pendente |
+| 5 | Billing (planos e assinatura) | Pendente |
+
+> Para detalhes completos do backlog, consulte `docs/saas-auth-backlog-schema.md`.
 
 ## 🔧 Configuração de Origem dos Leads
 

@@ -128,10 +128,14 @@ Transformar o TurbineApp em um CRM SaaS confiável, seguro e escalável, com aut
 ---
 
 ## 11) Roadmap recomendado
-**Fase 1 — Auth básico:** login, sessão, reset, logout.  
-**Fase 2 — Multi‑tenant e RBAC:** tenant_id, roles, guardas.  
-**Fase 3 — Auditoria:** logs e trilha para operações críticas.  
-**Fase 4 — Billing:** planos e assinatura.  
+
+> **Última atualização:** 2026‑03‑02
+
+**Fase 1 — Auth básico:** login, sessão, reset, logout. ✅ **CONCLUÍDA**  
+**Fase 2 — Multi‑tenant e RBAC:** tenant_id, roles, guardas. ✅ **CONCLUÍDA**  
+**Fase 3 — Times e colaboração:** times, compartilhamento, convites. ⬅️ **PRÓXIMO PASSO**  
+**Fase 4 — Auditoria:** logs e trilha para operações críticas.  
+**Fase 5 — Billing:** planos e assinatura.  
 
 ---
 

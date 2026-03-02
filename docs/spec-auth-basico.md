@@ -1,4 +1,7 @@
-# Spec — Autenticação Básica (Prioridade 1)
+# Spec — Autenticação Básica (Prioridade 1) ✅ CONCLUÍDA
+
+> **Status:** Implementação completa — todos os critérios de aceitação foram atendidos.  
+> **Última atualização:** 2026‑03‑02
 
 Este documento consolida o **PRD**, **backlog**, **schema multi-tenant/RLS**, **prompt de execução** e **referências técnicas** para definir a spec de implementação do **Auth básico** no TurbineApp.
 
@@ -84,13 +87,26 @@ Fontes utilizadas para esta spec:
   - **Mitigação**: implementar guardas de rota obrigatórios e validar em teste manual.
 
 ## 12) Plano de entrega (macro)
-1) Criar contexto/hook de autenticação.
-2) Criar tela de login.
-3) Implementar guardas de rota.
-4) Implementar logout.
-5) Documentar uso/configuração.
+1) ✅ Criar contexto/hook de autenticação — `src/contexts/AuthContext.tsx`.
+2) ✅ Criar tela de login — `src/pages/Login.tsx`.
+3) ✅ Implementar guardas de rota — `src/components/auth/PrivateRoute.tsx`, `PublicRoute.tsx`, `AdminRoute.tsx`, `RoleRoute.tsx`.
+4) ✅ Implementar logout — integrado no `AuthContext`.
+5) ✅ Documentar uso/configuração.
 
 ## 13) Definição de pronto
-- Todos os critérios de aceitação validados.
-- Fluxos de login/logout/sessão funcionando em ambiente local.
-- Rotas internas protegidas.
+- ✅ Todos os critérios de aceitação validados.
+- ✅ Fluxos de login/logout/sessão funcionando em ambiente local.
+- ✅ Rotas internas protegidas.
+
+## 14) Artefatos de implementação
+- `src/contexts/AuthContext.tsx` — contexto e hook de autenticação.
+- `src/pages/Login.tsx` — tela de login com e‑mail/senha.
+- `src/pages/ResetPassword.tsx` — solicitação de reset de senha.
+- `src/pages/UpdatePassword.tsx` — atualização de senha via link.
+- `src/components/auth/PrivateRoute.tsx` — guarda de rota para usuários autenticados.
+- `src/components/auth/PublicRoute.tsx` — redireciona usuários autenticados para o dashboard.
+- `src/components/auth/AdminRoute.tsx` — guarda de rota para admin master.
+- `src/components/auth/RoleRoute.tsx` — guarda de rota baseada em RBAC.
+- `src/components/auth/Can.tsx` — componente de permissão condicional.
+- `src/hooks/use-permissions.ts` — hook de permissões por role.
+- `supabase/migrations/001–005` — migrações de RLS, multi‑tenant, JWT claims e correções.

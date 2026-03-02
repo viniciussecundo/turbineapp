@@ -6,6 +6,8 @@ Este documento complementa o PRD e define:
 2. escolha do provedor de autenticação (Supabase);
 3. desenho do schema multi‑tenant + RLS (Row Level Security).
 
+> **Última atualização:** 2026‑03‑02 — status de implementação revisado.
+
 ---
 
 ## 1) Provedor de autenticação
@@ -13,62 +15,86 @@ Este documento complementa o PRD e define:
 **Escolha:** **Supabase Auth** (JWT + RLS nativos, integração com Postgres).  
 Motivos: já existe cliente Supabase no projeto, reduz custo e tempo de integração.
 
+**Status:** ✅ Implementado — cliente Supabase configurado em `src/lib/supabase.ts`.
+
 ---
 
 ## 2) Backlog detalhado (com estimativas)
 
 Estimativas em **story points (SP)**.
 
-### Épico A — Auth básico (total ~13 SP)
+### Épico A — Auth básico (total ~13 SP) ✅ CONCLUÍDO
 
-1. **A1 — Tela de login** (2 SP)
+1. ✅ **A1 — Tela de login** (2 SP)
    - UI + validação de e‑mail/senha.
-2. **A2 — Integração Supabase Auth (signIn)** (2 SP)
+   - Implementado em `src/pages/Login.tsx`.
+2. ✅ **A2 — Integração Supabase Auth (signIn)** (2 SP)
    - fluxo de login + sessão.
-3. **A3 — Reset de senha** (3 SP)
+   - Implementado em `src/contexts/AuthContext.tsx`.
+3. ✅ **A3 — Reset de senha** (3 SP)
    - solicitação, link e confirmação.
-4. **A4 — Logout global** (2 SP)
+   - Implementado em `src/pages/ResetPassword.tsx` e `src/pages/UpdatePassword.tsx`.
+4. ✅ **A4 — Logout global** (2 SP)
    - revogar sessões ativas.
-5. **A5 — Guardas de rota (private/public)** (4 SP)
+   - Implementado no `AuthContext` (`signOut`).
+5. ✅ **A5 — Guardas de rota (private/public)** (4 SP)
    - bloquear `/` e módulos sem sessão.
+   - Implementado em `src/components/auth/PrivateRoute.tsx` e `PublicRoute.tsx`.
 
-### Épico B — Multi‑tenant + RBAC (total ~21 SP)
+### Épico B — Multi‑tenant + RBAC (total ~21 SP) ✅ CONCLUÍDO
 
-1. **B1 — Schema multi‑tenant (tenant_id)** (5 SP)
+1. ✅ **B1 — Schema multi‑tenant (tenant_id)** (5 SP)
    - migrações e índices.
-2. **B2 — RLS por tenant (políticas)** (6 SP)
+   - Implementado em `supabase/migrations/002_multi_tenant.sql`.
+2. ✅ **B2 — RLS por tenant (políticas)** (6 SP)
    - select/insert/update/delete.
-3. **B3 — Claims de tenant no JWT** (4 SP)
+   - Implementado em `supabase/migrations/001_auth_rls_policies.sql` + correções em `004` e `005`.
+3. ✅ **B3 — Claims de tenant no JWT** (4 SP)
    - garantir `tenant_id` em sessão.
-4. **B4 — RBAC básico (roles)** (4 SP)
+   - Implementado em `supabase/migrations/003_jwt_claims_rbac.sql`.
+4. ✅ **B4 — RBAC básico (roles)** (4 SP)
    - Admin, Vendas, Financeiro, Leitura.
-5. **B5 — Permissões por módulo** (2 SP)
+   - Implementado com `RoleRoute` e hook `use-permissions.ts`.
+5. ✅ **B5 — Permissões por módulo** (2 SP)
    - habilitar/desabilitar views e ações.
+   - Implementado com componente `Can` e `RoleRoute` no roteamento.
 
-### Épico C — Times + Administração Master (total ~16 SP)
+### Épico C — Times + Administração Master (total ~16 SP) ⚠️ PARCIALMENTE CONCLUÍDO
 
-1. **C1 — Schema de times** (4 SP)
+1. ❌ **C1 — Schema de times** (4 SP)
    - tabelas `teams` e `team_members`.
-2. **C2 — UI de times** (5 SP)
+   - **Pendente** — tabelas ainda não existem no banco de dados.
+2. ❌ **C2 — UI de times** (5 SP)
    - criar time, adicionar/remover membros.
-3. **C3 — Compartilhamento por time** (4 SP)
+   - **Pendente** — nenhuma interface de times criada.
+3. ❌ **C3 — Compartilhamento por time** (4 SP)
    - regras de visibilidade por `team_id`.
-4. **C4 — Admin master (Turbine Tech)** (3 SP)
+   - **Pendente** — sem regras de compartilhamento.
+4. ✅ **C4 — Admin master (Turbine Tech)** (3 SP)
    - validar/bloquear usuários, auditoria e listagem global.
+   - Implementado em `src/pages/Admin.tsx` com `AdminRoute`.
 
-### Épico D — Onboarding (total ~8 SP)
+### Épico D — Onboarding (total ~8 SP) ⚠️ PARCIALMENTE CONCLUÍDO
 
-1. **D1 — Convites por e‑mail** (4 SP)
+1. ❌ **D1 — Convites por e‑mail** (4 SP)
    - criação e aceite de convite.
-2. **D2 — Aceite de convite + role** (4 SP)
+   - **Pendente** — tabela `invites` e fluxo de e‑mail não implementados.
+2. ❌ **D2 — Aceite de convite + role** (4 SP)
    - criação de usuário + role.
+   - **Pendente**.
+3. ✅ **D3 — Onboarding inicial (tenant + admin)** (estimativa adicional)
+   - Criação de organização + usuário admin no primeiro acesso.
+   - Implementado em `src/pages/Onboarding.tsx`.
 
-### Épico E — Auditoria e segurança (total ~10 SP)
+### Épico E — Auditoria e segurança (total ~10 SP) ⚠️ PARCIALMENTE CONCLUÍDO
 
-1. **E1 — Audit log** (4 SP)
+1. ⚠️ **E1 — Audit log** (4 SP)
    - registrar ações críticas (CRUD financeiro).
-2. **E2 — Rate limit / proteção login** (3 SP)
-3. **E3 — Alertas de segurança** (3 SP)
+   - **Parcial** — existe serviço de atividades (`activityService.ts`), mas sem trilha de auditoria formal para ações críticas.
+2. ❌ **E2 — Rate limit / proteção login** (3 SP)
+   - **Pendente**.
+3. ❌ **E3 — Alertas de segurança** (3 SP)
+   - **Pendente**.
 
 ---
 
@@ -229,8 +255,35 @@ with check ((auth.jwt() ->> 'role') = 'admin');
 
 ---
 
-## 5) Observações finais
+## 5) Resumo de progresso
 
-- As políticas acima assumem que o **JWT carrega `tenant_id`**.
-- Para convites, use uma tabela `invites` com `tenant_id`, `email`, `role`, `expires_at`.
-- Para RBAC granular, adicionar tabela `roles` e `permissions`.
+| Épico | Descrição | Status | SP feitos / total |
+|-------|-----------|--------|-------------------|
+| A | Auth básico | ✅ Concluído | 13 / 13 |
+| B | Multi‑tenant + RBAC | ✅ Concluído | 21 / 21 |
+| C | Times + Admin Master | ⚠️ Parcial | 3 / 16 |
+| D | Onboarding + Convites | ⚠️ Parcial | ~2 / 8 |
+| E | Auditoria e segurança | ⚠️ Parcial | ~1 / 10 |
+
+**Total estimado:** ~40 / 68 SP concluídos (~59 %).
+
+---
+
+## 6) Próximo passo recomendado
+
+**→ Épico C: Times (C1 → C2 → C3)**
+
+Motivo: o esquema multi‑tenant e RBAC já estão prontos. A funcionalidade de times é pré‑requisito para o compartilhamento de dados entre membros da mesma organização e para o sistema de convites (Épico D).
+
+### Tarefas imediatas
+1. **C1** — Criar migração com tabelas `teams` e `team_members` + índices + RLS.
+2. **C2** — Criar página de gestão de times (CRUD de times + adicionar/remover membros).
+3. **C3** — Implementar regras de visibilidade por `team_id` nos serviços existentes (leads, clientes, etc.).
+
+---
+
+## 7) Observações finais
+
+- As políticas acima assumem que o **JWT carrega `tenant_id`** — ✅ já implementado via `003_jwt_claims_rbac.sql`.
+- Para convites, usar uma tabela `invites` com `tenant_id`, `email`, `role`, `expires_at` — ❌ pendente (Épico D).
+- Para RBAC granular, adicionar tabela `roles` e `permissions` — ⚠️ RBAC básico implementado via campo `role` em `profiles`.

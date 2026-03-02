@@ -1,4 +1,7 @@
-# Prompt — Prioridade 1 (Auth básico)
+# Prompt — Prioridade 1 (Auth básico) ✅ CONCLUÍDO
+
+> **Status:** Implementação completa. Este prompt foi utilizado e todas as entregas foram realizadas.  
+> **Última atualização:** 2026‑03‑02
 
 Use este prompt para iniciar a implementação da **Prioridade 1** do roadmap: **autenticação básica** com Supabase.
 
