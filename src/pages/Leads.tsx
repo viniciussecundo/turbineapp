@@ -60,6 +60,7 @@ import {
 import { useData, LeadStatus, LeadOrigin, Lead } from "@/contexts/DataContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { Can } from "@/components/auth/Can";
 
 const statusConfig: Record<
   LeadStatus,
@@ -402,13 +403,15 @@ export default function Leads() {
             <Link2 className="mr-2 h-4 w-4" />
             Link Compartilhável
           </Button>
-          <Button
-            className="gradient-primary text-white shadow-lg glow-primary"
-            onClick={() => setIsDialogOpen(true)}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Novo Lead
-          </Button>
+          <Can permission="leads.create">
+            <Button
+              className="gradient-primary text-white shadow-lg glow-primary"
+              onClick={() => setIsDialogOpen(true)}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Lead
+            </Button>
+          </Can>
         </div>
       </div>
 
@@ -693,15 +696,17 @@ export default function Leads() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             {!isConverted && (
-                              <>
-                                <DropdownMenuItem
-                                  onClick={() => handleOpenConvertDialog(lead)}
-                                >
-                                  <UserPlus className="h-4 w-4 mr-2" />
-                                  Converter em Cliente
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                              </>
+                              <Can permission="leads.edit">
+                                <>
+                                  <DropdownMenuItem
+                                    onClick={() => handleOpenConvertDialog(lead)}
+                                  >
+                                    <UserPlus className="h-4 w-4 mr-2" />
+                                    Converter em Cliente
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                </>
+                              </Can>
                             )}
                             {isConverted && linkedClient && (
                               <>
@@ -722,14 +727,18 @@ export default function Leads() {
                               <Phone className="h-4 w-4 mr-2" />
                               Ligar
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-red-400"
-                              onClick={() => handleDeleteClick(lead)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Excluir Lead
-                            </DropdownMenuItem>
+                            <Can permission="leads.delete">
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-red-400"
+                                  onClick={() => handleDeleteClick(lead)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Excluir Lead
+                                </DropdownMenuItem>
+                              </>
+                            </Can>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>

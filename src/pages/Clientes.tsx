@@ -73,6 +73,7 @@ import {
   generateClientPDF,
   generateBatchClientPDF,
 } from "@/lib/generateClientPDF";
+import { Can } from "@/components/auth/Can";
 
 const statusConfig: Record<ClientStatus, { label: string; className: string }> =
   {
@@ -370,13 +371,15 @@ export default function Clientes() {
               Exportar PDFs ({filteredClients.length})
             </Button>
           )}
-          <Button
-            className="gradient-primary text-white shadow-lg glow-primary"
-            onClick={() => setIsDialogOpen(true)}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Novo Cliente
-          </Button>
+          <Can permission="clients.create">
+            <Button
+              className="gradient-primary text-white shadow-lg glow-primary"
+              onClick={() => setIsDialogOpen(true)}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Cliente
+            </Button>
+          </Can>
         </div>
       </div>
 
@@ -680,12 +683,14 @@ export default function Clientes() {
                               <FileDown className="h-4 w-4 mr-2" />
                               Gerar PDF
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleEditClick(client)}
-                            >
-                              <Pencil className="h-4 w-4 mr-2" />
-                              Editar cliente
-                            </DropdownMenuItem>
+                            <Can permission="clients.edit">
+                              <DropdownMenuItem
+                                onClick={() => handleEditClick(client)}
+                              >
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Editar cliente
+                              </DropdownMenuItem>
+                            </Can>
                             {client.leadId && (
                               <DropdownMenuItem
                                 onClick={() => navigate("/leads")}
@@ -694,14 +699,18 @@ export default function Clientes() {
                                 Ver Lead original
                               </DropdownMenuItem>
                             )}
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-red-400"
-                              onClick={() => handleDeleteClick(client)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Excluir cliente
-                            </DropdownMenuItem>
+                            <Can permission="clients.delete">
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-red-400"
+                                  onClick={() => handleDeleteClick(client)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Excluir cliente
+                                </DropdownMenuItem>
+                              </>
+                            </Can>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>
