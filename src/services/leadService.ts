@@ -95,11 +95,12 @@ export const leadService = {
     selfRegistered = false,
     tenantId?: string,
   ): Promise<Lead | null> {
+    const createdAt = new Date().toISOString().split("T")[0];
     const dbData = toDbLead(
       {
         ...lead,
         status: "novo",
-        createdAt: new Date().toISOString().split("T")[0],
+        createdAt,
         selfRegistered,
         viewed: false,
       },
@@ -110,6 +111,27 @@ export const leadService = {
     Object.keys(dbData).forEach((key) => {
       if (dbData[key] === undefined) delete dbData[key];
     });
+
+    // Anon users (selfRegistered) don't have SELECT policy,
+    // so .select().single() would fail after the insert.
+    if (selfRegistered) {
+      const { error } = await supabase.from("leads").insert(dbData);
+
+      if (error) {
+        console.error("Erro ao criar lead:", error);
+        return null;
+      }
+
+      // Return a synthetic lead object since we can't read it back
+      return {
+        id: 0,
+        ...lead,
+        status: "novo",
+        createdAt,
+        selfRegistered: true,
+        viewed: false,
+      } as Lead;
+    }
 
     const { data, error } = await supabase
       .from("leads")
