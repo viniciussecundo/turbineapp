@@ -178,7 +178,7 @@ Transformar o TurbineApp em um CRM SaaS confiável, seguro e escalável, com aut
 | Requisito                                                   | Status | Referência                                                                    |
 | ----------------------------------------------------------- | ------ | ----------------------------------------------------------------------------- |
 | **RF‑RBAC‑01** — Papéis: Admin, Vendas, Financeiro, Leitura | ✅     | `supabase/migrations/003_jwt_claims_rbac.sql`, `src/hooks/use-permissions.ts` |
-| **RF‑RBAC‑02** — Admin pode criar/editar convites           | ⚠️     | RBAC implementado, mas convites ainda não implementados                       |
+| **RF‑RBAC‑02** — Admin pode criar/editar convites           | ⚠️     | RBAC implementado, mas convites por e-mail ainda não implementados            |
 | **RF‑RBAC‑03** — Leitura não pode editar dados              | ✅     | RLS restrictive policies + `src/components/auth/RoleRoute.tsx`                |
 
 ### 5.5 Admin master (Turbine Tech) — ✅ Implementado
@@ -206,3 +206,56 @@ Transformar o TurbineApp em um CRM SaaS confiável, seguro e escalável, com aut
 | RBAC (5.3)         | ✅ Completo |
 | Admin master (5.5) | ✅ Completo |
 | Onboarding (5.6)   | ⚠️ Parcial  |
+
+---
+
+## 14) Funcionalidades além do escopo original do PRD
+
+Funcionalidades implementadas que vão além dos requisitos de autenticação definidos neste PRD:
+
+### Cadastro Público de Leads (`/cadastro`)
+
+Formulário público para auto-cadastro de leads via link compartilhável por organização.
+
+**Rota:** `/cadastro?t=<tenant-uuid>`
+
+**Campos:**
+
+- Nome, e-mail, telefone (obrigatórios)
+- Empresa, origem, mensagem (opcionais)
+- Perfil de redes sociais: seguidores, posts, orçamento mensal (opcionais)
+
+**Comportamento:**
+
+- O `tenant_id` é lido do parâmetro `?t=` da URL
+- O lead é inserido diretamente via policy RLS de insert anônimo sem autenticar o usuário
+- Como usuários anônimos não têm SELECT policy em `leads`, o insert é feito sem `.select()` para evitar erro de permissão
+- O lead aparece na página `/leads` do tenant com status `novo` e `self_registered: true`
+- O link correto (com `tenant_id`) é gerado pelo botão **"Link Compartilhável"** na página `/leads`
+
+**Arquivos relevantes:**
+
+- `src/pages/CadastroPublico.tsx` — formulário público
+- `src/pages/Leads.tsx` — botão que gera e copia o link
+- `src/services/leadService.ts` — lógica de insert sem select para anon
+- `supabase/migrations/002_multi_tenant.sql` — policy `"leads: anon insert"`
+
+### Gestão de Leads
+
+Funil completo de leads com status `novo → contato → proposta → fechado`, origens (`site`, `instagram`, `facebook`, `indicacao`, `google`, `outro`), visualização de novos não lidos e conversão direta para cliente.
+
+### Gestão de Clientes
+
+Cadastro completo com perfil de redes sociais, projetos vinculados, carteiras de tráfego e geração de PDF.
+
+### Financeiro
+
+Controle de transações por categoria (receita/despesa), carteiras virtuais com saldo automático via trigger, orçamentos com geração de PDF e código sequencial por tenant.
+
+### Relatórios
+
+Dashboard com gráficos de receita/despesa (Recharts), funil de leads e breakdown de orçamentos por status.
+
+### Configurações e Membros
+
+Gerenciamento de membros do tenant — alterar papel, bloquear/ativar, remover — acessível apenas para `admin`.
