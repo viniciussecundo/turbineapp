@@ -40,6 +40,10 @@ Este arquivo centraliza links oficiais de documentação para as tecnologias usa
 - cmdk: https://cmdk.paco.me/
 - input-otp: https://input-otp.dev/
 
+## PDF e layout
+- jsPDF: https://github.com/parallax/jsPDF#readme
+- react-resizable-panels: https://github.com/bvaughn/react-resizable-panels#readme
+
 ## Qualidade e testes
 - ESLint: https://eslint.org/docs/latest/
 - Vitest: https://vitest.dev/guide/

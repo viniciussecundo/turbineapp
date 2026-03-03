@@ -138,3 +138,70 @@ Transformar o TurbineApp em um CRM SaaS confiável, seguro e escalável, com aut
 ## 12) Dependências e riscos
 **Dependências:** provedor de auth (ex.: Supabase/Auth0).  
 **Riscos:** vazamento entre tenants; mitigação com RLS + testes.  
+
+---
+
+## 13) Status de Implementação
+
+Última atualização: Julho 2025.
+
+### 5.1 Autenticação (Login/Session) — ✅ Implementado
+
+| Requisito | Status | Referência |
+|-----------|--------|------------|
+| **RF‑AUTH‑01** — Login com e‑mail e senha | ✅ | `src/pages/Login.tsx`, `src/contexts/AuthContext.tsx` |
+| **RF‑AUTH‑02** — Reset de senha por e‑mail | ✅ | `src/pages/ResetPassword.tsx`, `src/pages/UpdatePassword.tsx` |
+| **RF‑AUTH‑03** — Sessões com refresh token | ✅ | `src/contexts/AuthContext.tsx` (Supabase gerencia sessões) |
+| **RF‑AUTH‑04** — Logout global | ✅ | `src/contexts/AuthContext.tsx` → `signOut()` |
+| **RF‑AUTH‑05** — MFA opcional (TOTP) | ❌ | Fora do escopo do MVP |
+
+### 5.2 Multi‑tenant — ✅ Implementado
+
+| Requisito | Status | Referência |
+|-----------|--------|------------|
+| **RF‑TENANT‑01** — Cada usuário pertence a 1 tenant | ✅ | `supabase/migrations/002_multi_tenant.sql` (profiles.tenant_id) |
+| **RF‑TENANT‑02** — Queries filtradas por `tenant_id` | ✅ | RLS policies em `002_multi_tenant.sql`, `004_fix_rls_recursion.sql`, `005_fix_delete_policies.sql` |
+| **RF‑TENANT‑03** — Token carrega `tenant_id` e roles | ✅ | `supabase/migrations/003_jwt_claims_rbac.sql` (custom_access_token_hook) |
+
+### 5.3 RBAC (Roles) — ✅ Implementado
+
+| Requisito | Status | Referência |
+|-----------|--------|------------|
+| **RF‑RBAC‑01** — Papéis: Admin, Vendas, Financeiro, Leitura | ✅ | `supabase/migrations/003_jwt_claims_rbac.sql`, `src/hooks/use-permissions.ts` |
+| **RF‑RBAC‑02** — Admin pode criar/editar convites | ⚠️ | RBAC implementado, mas convites ainda não implementados |
+| **RF‑RBAC‑03** — Leitura não pode editar dados | ✅ | RLS restrictive policies + `src/components/auth/RoleRoute.tsx` |
+
+### 5.4 Times (colaboração interna) — ❌ Não implementado
+
+| Requisito | Status | Referência |
+|-----------|--------|------------|
+| **RF‑TEAM‑01** — Usuários pertencem a times | ❌ | Tabelas `teams`/`team_members` não criadas no DB |
+| **RF‑TEAM‑02** — Compartilhamento por time | ❌ | — |
+| **RF‑TEAM‑03** — Admin gerencia times | ❌ | — |
+
+### 5.5 Admin master (Turbine Tech) — ✅ Implementado
+
+| Requisito | Status | Referência |
+|-----------|--------|------------|
+| **RF‑MASTER‑01** — Papel admin master | ✅ | `src/pages/Admin.tsx`, `src/components/auth/AdminRoute.tsx` |
+| **RF‑MASTER‑02** — Validar/bloquear usuários | ✅ | RPCs em `003_jwt_claims_rbac.sql`, UI em `src/pages/Admin.tsx` |
+| **RF‑MASTER‑03** — Políticas de acesso e auditoria | ⚠️ | Acesso implementado; auditoria pendente |
+
+### 5.6 Onboarding (Organização) — ⚠️ Parcialmente implementado
+
+| Requisito | Status | Referência |
+|-----------|--------|------------|
+| **RF‑ONB‑01** — Criar organização + usuário admin | ✅ | `src/pages/Onboarding.tsx`, RPC `create_tenant_with_profile` |
+| **RF‑ONB‑02** — Convites por e‑mail | ❌ | Não implementado |
+| **RF‑ONB‑03** — Aceite de convite com role | ❌ | Não implementado |
+
+### Resumo geral
+
+| Área | Status |
+|------|--------|
+| Autenticação (5.1) | ✅ Completo |
+| Multi‑tenant (5.2) | ✅ Completo |
+| RBAC (5.3) | ✅ Completo |
+| Times (5.4) | ❌ Não iniciado |
+| Admin master (5.5) | ✅ Completo |
+| Onboarding (5.6) | ⚠️ Parcial |
