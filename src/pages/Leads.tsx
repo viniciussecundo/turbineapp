@@ -58,6 +58,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useData, LeadStatus, LeadOrigin, Lead } from "@/contexts/DataContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Can } from "@/components/auth/Can";
@@ -112,6 +113,7 @@ export default function Leads() {
     getUnviewedLeadsCount,
     addActivity,
   } = useData();
+  const { tenantId } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<LeadStatus | "all">("all");
@@ -398,7 +400,7 @@ export default function Leads() {
             variant="outline"
             className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
             onClick={() => {
-              const url = `${window.location.origin}/cadastro`;
+              const url = `${window.location.origin}/cadastro?t=${tenantId}`;
               navigator.clipboard.writeText(url);
               toast.success("Link copiado para a área de transferência!");
             }}
