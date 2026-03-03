@@ -19,56 +19,79 @@ Motivos: já existe cliente Supabase no projeto, reduz custo e tempo de integra�
 
 Estimativas em **story points (SP)**.
 
-### Épico A — Auth básico (total ~13 SP)
+### Épico A — Auth básico (total ~13 SP) ✅ COMPLETO
 
-1. **A1 — Tela de login** (2 SP)
+1. **A1 — Tela de login** (2 SP) ✅
    - UI + validação de e‑mail/senha.
-2. **A2 — Integração Supabase Auth (signIn)** (2 SP)
+   - → `src/pages/Login.tsx`
+2. **A2 — Integração Supabase Auth (signIn)** (2 SP) ✅
    - fluxo de login + sessão.
-3. **A3 — Reset de senha** (3 SP)
+   - → `src/contexts/AuthContext.tsx`
+3. **A3 — Reset de senha** (3 SP) ✅
    - solicitação, link e confirmação.
-4. **A4 — Logout global** (2 SP)
+   - → `src/pages/ResetPassword.tsx`, `src/pages/UpdatePassword.tsx`
+4. **A4 — Logout global** (2 SP) ✅
    - revogar sessões ativas.
-5. **A5 — Guardas de rota (private/public)** (4 SP)
+   - → `src/contexts/AuthContext.tsx` → `signOut()`
+5. **A5 — Guardas de rota (private/public)** (4 SP) ✅
    - bloquear `/` e módulos sem sessão.
+   - → `src/components/auth/PrivateRoute.tsx`, `src/components/auth/PublicRoute.tsx`
 
-### Épico B — Multi‑tenant + RBAC (total ~21 SP)
+### Épico B — Multi‑tenant + RBAC (total ~21 SP) ✅ COMPLETO
 
-1. **B1 — Schema multi‑tenant (tenant_id)** (5 SP)
+1. **B1 — Schema multi‑tenant (tenant_id)** (5 SP) ✅
    - migrações e índices.
-2. **B2 — RLS por tenant (políticas)** (6 SP)
+   - → `supabase/migrations/002_multi_tenant.sql`
+2. **B2 — RLS por tenant (políticas)** (6 SP) ✅
    - select/insert/update/delete.
-3. **B3 — Claims de tenant no JWT** (4 SP)
+   - → `supabase/migrations/002_multi_tenant.sql`, `004_fix_rls_recursion.sql`, `005_fix_delete_policies.sql`
+3. **B3 — Claims de tenant no JWT** (4 SP) ✅
    - garantir `tenant_id` em sessão.
-4. **B4 — RBAC básico (roles)** (4 SP)
+   - → `supabase/migrations/003_jwt_claims_rbac.sql` (custom_access_token_hook)
+4. **B4 — RBAC básico (roles)** (4 SP) ✅
    - Admin, Vendas, Financeiro, Leitura.
-5. **B5 — Permissões por módulo** (2 SP)
+   - → `supabase/migrations/003_jwt_claims_rbac.sql`, `src/hooks/use-permissions.ts`
+5. **B5 — Permissões por módulo** (2 SP) ✅
    - habilitar/desabilitar views e ações.
+   - → `src/components/auth/RoleRoute.tsx`, RLS restrictive policies
 
-### Épico C — Times + Administração Master (total ~16 SP)
+### Épico C — Times + Administração Master (total ~16 SP) ⚠️ PARCIAL
 
-1. **C1 — Schema de times** (4 SP)
+1. **C1 — Schema de times** (4 SP) ❌
    - tabelas `teams` e `team_members`.
-2. **C2 — UI de times** (5 SP)
+2. **C2 — UI de times** (5 SP) ❌
    - criar time, adicionar/remover membros.
-3. **C3 — Compartilhamento por time** (4 SP)
+3. **C3 — Compartilhamento por time** (4 SP) ❌
    - regras de visibilidade por `team_id`.
-4. **C4 — Admin master (Turbine Tech)** (3 SP)
+4. **C4 — Admin master (Turbine Tech)** (3 SP) ✅
    - validar/bloquear usuários, auditoria e listagem global.
+   - → `src/pages/Admin.tsx`, `src/components/auth/AdminRoute.tsx`, RPCs em `003_jwt_claims_rbac.sql`
 
-### Épico D — Onboarding (total ~8 SP)
+### Épico D — Onboarding (total ~8 SP) ⚠️ PARCIAL
 
-1. **D1 — Convites por e‑mail** (4 SP)
+1. **D1 — Convites por e‑mail** (4 SP) ❌
    - criação e aceite de convite.
-2. **D2 — Aceite de convite + role** (4 SP)
+2. **D2 — Aceite de convite + role** (4 SP) ❌
    - criação de usuário + role.
+3. **Onboarding (criar tenant + perfil)** ✅
+   - → `src/pages/Onboarding.tsx`, RPC `create_tenant_with_profile`
 
-### Épico E — Auditoria e segurança (total ~10 SP)
+### Épico E — Auditoria e segurança (total ~10 SP) ❌ NÃO INICIADO
 
-1. **E1 — Audit log** (4 SP)
+1. **E1 — Audit log** (4 SP) ❌
    - registrar ações críticas (CRUD financeiro).
-2. **E2 — Rate limit / proteção login** (3 SP)
-3. **E3 — Alertas de segurança** (3 SP)
+2. **E2 — Rate limit / proteção login** (3 SP) ❌
+3. **E3 — Alertas de segurança** (3 SP) ❌
+
+### Resumo de progresso
+
+| Épico | Status | Progresso |
+|-------|--------|-----------|
+| A — Auth básico | ✅ Completo | 5/5 itens |
+| B — Multi‑tenant + RBAC | ✅ Completo | 5/5 itens |
+| C — Times + Admin Master | ⚠️ Parcial | 1/4 itens (C4) |
+| D — Onboarding | ⚠️ Parcial | 1/3 (criar tenant + perfil; convites pendentes) |
+| E — Auditoria e segurança | ❌ Não iniciado | 0/3 itens |
 
 ---
 

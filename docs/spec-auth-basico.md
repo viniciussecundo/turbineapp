@@ -94,3 +94,35 @@ Fontes utilizadas para esta spec:
 - Todos os critérios de aceitação validados.
 - Fluxos de login/logout/sessão funcionando em ambiente local.
 - Rotas internas protegidas.
+
+---
+
+## 14) Status de Implementação — ✅ COMPLETO
+
+Todos os critérios de aceitação desta spec foram atendidos. Abaixo, os artefatos implementados:
+
+### Componentes e arquivos
+
+| Componente | Arquivo | Descrição |
+|------------|---------|-----------|
+| AuthContext | `src/contexts/AuthContext.tsx` | Contexto global de autenticação. Expõe `user`, `session`, `profile`, `signIn`, `signOut`, `isLoading`. |
+| LoginPage | `src/pages/Login.tsx` | UI de login com e‑mail/senha, validação e feedback de erro. |
+| PrivateRoute | `src/components/auth/PrivateRoute.tsx` | Guarda de rota que bloqueia acesso sem sessão válida. |
+| PublicRoute | `src/components/auth/PublicRoute.tsx` | Redireciona usuários já autenticados para o dashboard. |
+| RoleRoute | `src/components/auth/RoleRoute.tsx` | Guarda de rota com verificação de role/permissão (RBAC). |
+| AdminRoute | `src/components/auth/AdminRoute.tsx` | Guarda de rota exclusiva para admin master. |
+| Can | `src/components/auth/Can.tsx` | Componente de renderização condicional por permissão. |
+| ResetPassword | `src/pages/ResetPassword.tsx` | Solicitar reset de senha por e‑mail. |
+| UpdatePassword | `src/pages/UpdatePassword.tsx` | Confirmar nova senha após reset. |
+| usePermissions | `src/hooks/use-permissions.ts` | Hook para verificar permissões do usuário logado. |
+| Supabase client | `src/lib/supabase.ts` | Cliente Supabase configurado. |
+
+### Critérios de aceitação — verificação
+
+| Critério | Status |
+|----------|--------|
+| Usuário não autenticado não acessa rotas internas | ✅ PrivateRoute redireciona para `/login` |
+| Usuário autenticado acessa normalmente o CRM | ✅ Sessão persistente via Supabase |
+| Login com credenciais válidas cria sessão | ✅ `signInWithPassword` no AuthContext |
+| Logout encerra sessão | ✅ `signOut` limpa sessão local e Supabase |
+| Erros de login exibidos de forma amigável | ✅ Toast de erro na LoginPage |

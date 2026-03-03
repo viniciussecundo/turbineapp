@@ -1,29 +1,37 @@
 # 🚀 TurbineApp
 
-CRM completo para gestão de clientes e leads, desenvolvido com React + TypeScript.
+CRM SaaS multi‑tenant para gestão de clientes e leads, desenvolvido com React + TypeScript + Supabase.
 
 ## 📋 Sobre o Projeto
 
-TurbineApp é um sistema de CRM moderno e intuitivo para gerenciar seu funil de vendas, clientes e leads de forma eficiente.
+TurbineApp é um sistema de CRM SaaS moderno e seguro, com autenticação robusta, RBAC, isolamento multi‑tenant e painel de administração master.
 
 ### ✨ Funcionalidades
 
+- **Autenticação Completa**: Login, logout, reset de senha com Supabase Auth
+- **Multi‑tenant**: Isolamento de dados por organização com RLS (Row Level Security)
+- **RBAC**: Controle de acesso por papéis (Admin, Vendas, Financeiro, Leitura)
+- **Admin Master**: Painel Turbine Tech para validar/bloquear usuários globalmente
+- **Onboarding**: Criação de organização + perfil de administrador
 - **Gestão de Leads**: Funil visual com status (Novo, Contato, Proposta, Fechado)
 - **Gestão de Clientes**: Cadastro completo com análise de perfil
+- **Finanças**: Controle de transações, carteiras e orçamentos com geração de PDF
 - **Link Compartilhável**: Página pública para auto-cadastro de leads (`/cadastro`)
-- **Persistência de Dados**: Dados salvos no LocalStorage
-- **Linhas Expansíveis**: Detalhes adicionais ao clicar em leads/clientes
-- **Campos de Tráfego**: Seguidores, posts, orçamento mensal
-- **Análise de Perfil**: Segmento, objetivo, público-alvo, score
+- **Relatórios**: Dashboard com gráficos e métricas
 
 ## 🛠️ Tecnologias Utilizadas
 
 - **Vite** - Build tool rápido
 - **TypeScript** - Tipagem estática
 - **React** - Biblioteca de UI
+- **Supabase** - Backend (Auth, Postgres, RLS, Storage)
 - **shadcn/ui** - Componentes de interface
 - **Tailwind CSS** - Estilização utilitária
 - **React Router** - Navegação
+- **TanStack React Query** - Gerenciamento de estado assíncrono
+- **React Hook Form + Zod** - Formulários e validação
+- **jsPDF** - Geração de PDFs
+- **Recharts** - Gráficos e visualização
 
 ## 🚀 Como Executar
 
@@ -31,6 +39,24 @@ TurbineApp é um sistema de CRM moderno e intuitivo para gerenciar seu funil de 
 
 - Node.js instalado - [instalar com nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 - npm ou bun
+- Conta no [Supabase](https://supabase.com/) com projeto configurado
+
+### Configuração do Supabase
+
+Crie um arquivo `.env` na raiz do projeto com as variáveis do seu projeto Supabase:
+
+```env
+VITE_SUPABASE_URL=https://seu-projeto.supabase.co
+VITE_SUPABASE_ANON_KEY=sua-anon-key
+```
+
+Aplique as migrações SQL na ordem (via Supabase Dashboard > SQL Editor):
+
+1. `supabase/migrations/001_auth_rls_policies.sql`
+2. `supabase/migrations/002_multi_tenant.sql`
+3. `supabase/migrations/003_jwt_claims_rbac.sql`
+4. `supabase/migrations/004_fix_rls_recursion.sql`
+5. `supabase/migrations/005_fix_delete_policies.sql`
 
 ### Instalação
 
@@ -54,18 +80,40 @@ O projeto estará disponível em `http://localhost:8081`
 
 ```
 src/
-├── components/       # Componentes reutilizáveis
-│   ├── ui/          # Componentes shadcn/ui
-│   ├── layout/      # Layout (Sidebar, Header)
-│   └── dashboard/   # Componentes do dashboard
-├── contexts/        # Contextos React (DataContext)
-├── pages/           # Páginas da aplicação
-│   ├── Index.tsx    # Dashboard
-│   ├── Leads.tsx    # Gestão de leads
-│   ├── Clientes.tsx # Gestão de clientes
-│   └── CadastroPublico.tsx # Página pública
-├── hooks/           # Hooks customizados
-└── lib/             # Utilitários
+├── components/
+│   ├── auth/            # Guardas de rota e componentes de autorização
+│   │   ├── PrivateRoute.tsx   # Bloqueia acesso sem sessão
+│   │   ├── PublicRoute.tsx    # Redireciona se já autenticado
+│   │   ├── RoleRoute.tsx      # Guarda com verificação de role
+│   │   ├── AdminRoute.tsx     # Acesso exclusivo admin master
+│   │   └── Can.tsx            # Renderização condicional por permissão
+│   ├── ui/              # Componentes shadcn/ui
+│   ├── layout/          # Layout (Sidebar, Header)
+│   └── dashboard/       # Componentes do dashboard
+├── contexts/
+│   ├── AuthContext.tsx   # Autenticação (sessão, login, logout, perfil)
+│   └── DataContext.tsx   # Dados do CRM
+├── hooks/
+│   ├── use-permissions.ts  # Hook de verificação de permissões (RBAC)
+│   └── use-toast.ts        # Notificações
+├── services/            # Serviços de acesso a dados (Supabase)
+│   ├── leadService.ts
+│   ├── clientService.ts
+│   ├── profileService.ts
+│   └── ...
+├── pages/
+│   ├── Login.tsx           # Tela de login
+│   ├── ResetPassword.tsx   # Solicitar reset de senha
+│   ├── UpdatePassword.tsx  # Confirmar nova senha
+│   ├── Onboarding.tsx      # Criar organização + perfil
+│   ├── Admin.tsx           # Painel admin master
+│   ├── Index.tsx           # Dashboard
+│   ├── Leads.tsx           # Gestão de leads
+│   ├── Clientes.tsx        # Gestão de clientes
+│   └── ...
+└── lib/
+    ├── supabase.ts         # Cliente Supabase
+    └── utils.ts            # Utilitários gerais
 ```
 
 ## 🔧 Configuração de Origem dos Leads

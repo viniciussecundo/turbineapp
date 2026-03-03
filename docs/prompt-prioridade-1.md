@@ -1,5 +1,15 @@
 # Prompt — Prioridade 1 (Auth básico)
 
+> **✅ STATUS: COMPLETO** — Todas as entregas desta prioridade foram implementadas.
+>
+> ### Entregas realizadas
+> - Tela de login (`src/pages/Login.tsx`)
+> - AuthContext com sessão persistente (`src/contexts/AuthContext.tsx`)
+> - Guardas de rota: PrivateRoute, PublicRoute, RoleRoute (`src/components/auth/`)
+> - Logout global (`signOut` no AuthContext)
+> - Reset de senha (`src/pages/ResetPassword.tsx`, `src/pages/UpdatePassword.tsx`)
+> - Integração completa com Supabase Auth
+
 Use este prompt para iniciar a implementação da **Prioridade 1** do roadmap: **autenticação básica** com Supabase.
 
 ---
