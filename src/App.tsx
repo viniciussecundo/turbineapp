@@ -1,4 +1,3 @@
-import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -25,7 +24,6 @@ import Onboarding from "./pages/Onboarding";
 import ResetPassword from "./pages/ResetPassword";
 import UpdatePassword from "./pages/UpdatePassword";
 import Admin from "./pages/Admin";
-import Teams from "./pages/Teams";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,7 +33,6 @@ const App = () => (
     <AuthProvider>
       <DataProvider>
         <TooltipProvider>
-          <Toaster />
           <Sonner />
           <BrowserRouter>
             <PageTransition>
@@ -71,7 +68,6 @@ const App = () => (
                       <Route path="/orcamentos" element={<Orcamentos />} />
                       <Route path="/relatorios" element={<Relatorios />} />
                       <Route path="/configuracoes" element={<Settings />} />
-                      <Route path="/times" element={<Teams />} />
                     </Route>
                   </Route>
                 </Route>

@@ -3,10 +3,6 @@ import { routeToModule } from "@/hooks/use-permissions";
 
 describe("use-permissions", () => {
   describe("routeToModule", () => {
-    it("maps /times to teams module", () => {
-      expect(routeToModule("/times")).toBe("teams");
-    });
-
     it("maps / to dashboard module", () => {
       expect(routeToModule("/")).toBe("dashboard");
     });

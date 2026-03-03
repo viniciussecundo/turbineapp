@@ -12,18 +12,14 @@ import {
   X,
   Menu,
   Target,
-  Plus,
   UserPlus,
   FilePlus,
   Bell,
   Eye,
-  Sparkles,
   DollarSign,
-  UserCheck,
   Receipt,
   ChevronDown,
   Shield,
-  UsersRound,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -40,7 +36,6 @@ const navItems = [
   { path: "/leads", label: "Leads", icon: Target },
   { path: "/financas", label: "Finanças", icon: Wallet },
   { path: "/orcamentos", label: "Orçamentos", icon: FileText },
-  { path: "/times", label: "Times", icon: UsersRound },
   { path: "/relatorios", label: "Relatórios", icon: BarChart3 },
   { path: "/configuracoes", label: "Configurações", icon: Settings },
 ];

@@ -45,7 +45,7 @@ import {
   BUDGET_STATUS_CONFIG,
 } from "@/contexts/DataContext";
 import { generateBudgetPDF } from "@/lib/generateBudgetPDF";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 export default function Orcamentos() {
   const {
@@ -267,10 +267,8 @@ export default function Orcamentos() {
     if (selectedBudget) {
       const success = await deleteBudget(selectedBudget.id);
       if (!success) {
-        toast({
-          title: "Erro ao excluir",
+        toast.error("Erro ao excluir", {
           description: "Não foi possível excluir o orçamento. Verifique suas permissões.",
-          variant: "destructive",
         });
       }
       setIsDeleteDialogOpen(false);
@@ -297,8 +295,7 @@ export default function Orcamentos() {
 
     const client = clients.find((c) => c.id === budget.clientId);
 
-    toast({
-      title: "✅ Orçamento Aprovado!",
+    toast.success("Orçamento Aprovado!", {
       description: isTrafficBudget
         ? `Receita de R$ ${budget.totalValue.toLocaleString("pt-BR")} criada e cartão virtual de ${client?.name || "cliente"} atualizado.`
         : `Receita de R$ ${budget.totalValue.toLocaleString("pt-BR")} criada automaticamente.`,

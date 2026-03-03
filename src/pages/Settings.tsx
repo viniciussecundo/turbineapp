@@ -36,7 +36,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/use-permissions";
 import type { UserRole, ProfileStatus } from "@/types/database";
@@ -86,7 +86,6 @@ const statusBadgeVariant: Record<ProfileStatus, string> = {
 export default function Settings() {
   const { user, profile } = useAuth();
   const { role, isMasterAdmin } = usePermissions();
-  const { toast } = useToast();
   const [members, setMembers] = useState<TenantMember[]>([]);
   const [isLoadingMembers, setIsLoadingMembers] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -97,16 +96,14 @@ export default function Settings() {
     setIsLoadingMembers(true);
     const result = await listTenantMembers();
     if (result.error) {
-      toast({
-        title: "Erro ao carregar membros",
+      toast.error("Erro ao carregar membros", {
         description: result.error,
-        variant: "destructive",
       });
     } else {
       setMembers(result.data);
     }
     setIsLoadingMembers(false);
-  }, [toast]);
+  }, []);
 
   useEffect(() => {
     loadMembers();
@@ -118,15 +115,13 @@ export default function Settings() {
     setActionLoading(null);
 
     if (result.error) {
-      toast({
-        title: "Erro ao alterar papel",
+      toast.error("Erro ao alterar papel", {
         description: result.error,
-        variant: "destructive",
       });
       return;
     }
 
-    toast({ title: "Papel atualizado com sucesso" });
+    toast.success("Papel atualizado com sucesso");
     await loadMembers();
   };
 
@@ -138,18 +133,15 @@ export default function Settings() {
     setActionLoading(null);
 
     if (result.error) {
-      toast({
-        title: "Erro ao alterar status",
+      toast.error("Erro ao alterar status", {
         description: result.error,
-        variant: "destructive",
       });
       return;
     }
 
-    toast({
-      title:
-        newStatus === "blocked" ? "Membro bloqueado" : "Membro desbloqueado",
-    });
+    toast.success(
+      newStatus === "blocked" ? "Membro bloqueado" : "Membro desbloqueado",
+    );
     await loadMembers();
   };
 
@@ -159,15 +151,13 @@ export default function Settings() {
     setActionLoading(null);
 
     if (result.error) {
-      toast({
-        title: "Erro ao remover membro",
+      toast.error("Erro ao remover membro", {
         description: result.error,
-        variant: "destructive",
       });
       return;
     }
 
-    toast({ title: "Membro removido com sucesso" });
+    toast.success("Membro removido com sucesso");
     await loadMembers();
   };
 

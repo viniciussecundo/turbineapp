@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { LogOut, Menu } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -10,7 +10,6 @@ interface HeaderProps {
 
 export function Header({ onMenuClick }: HeaderProps) {
   const { user, signOut } = useAuth();
-  const { toast } = useToast();
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleSignOut = async () => {
@@ -19,10 +18,8 @@ export function Header({ onMenuClick }: HeaderProps) {
     setIsSigningOut(false);
 
     if (result.error) {
-      toast({
-        title: "Nao foi possivel sair",
+      toast.error("Nao foi possivel sair", {
         description: result.error,
-        variant: "destructive",
       });
     }
   };

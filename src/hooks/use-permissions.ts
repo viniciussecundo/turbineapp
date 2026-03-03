@@ -17,8 +17,7 @@ type Module =
   | "finance"
   | "budgets"
   | "reports"
-  | "settings"
-  | "teams";
+  | "settings";
 
 type Action = "view" | "create" | "edit" | "delete";
 
@@ -31,7 +30,6 @@ const PERMISSIONS: Record<UserRole, Record<Module, Action[]>> = {
     budgets: ["view", "create", "edit", "delete"],
     reports: ["view"],
     settings: ["view", "create", "edit", "delete"],
-    teams: ["view", "create", "edit", "delete"],
   },
   sales: {
     dashboard: ["view"],
@@ -41,7 +39,6 @@ const PERMISSIONS: Record<UserRole, Record<Module, Action[]>> = {
     budgets: ["view", "create", "edit"],
     reports: ["view"],
     settings: ["view"],
-    teams: ["view"],
   },
   finance: {
     dashboard: ["view"],
@@ -51,7 +48,6 @@ const PERMISSIONS: Record<UserRole, Record<Module, Action[]>> = {
     budgets: ["view", "create", "edit"],
     reports: ["view"],
     settings: ["view"],
-    teams: ["view"],
   },
   viewer: {
     dashboard: ["view"],
@@ -61,7 +57,6 @@ const PERMISSIONS: Record<UserRole, Record<Module, Action[]>> = {
     budgets: ["view"],
     reports: ["view"],
     settings: ["view"],
-    teams: ["view"],
   },
 };
 
@@ -102,6 +97,5 @@ export function routeToModule(path: string): Module | null {
   if (path.startsWith("/orcamentos")) return "budgets";
   if (path.startsWith("/relatorios")) return "reports";
   if (path.startsWith("/configuracoes")) return "settings";
-  if (path.startsWith("/times")) return "teams";
   return null;
 }

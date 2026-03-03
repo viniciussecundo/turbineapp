@@ -9,7 +9,6 @@ export { transactionService } from "./transactionService";
 export { walletService } from "./walletService";
 export { budgetService } from "./budgetService";
 export { activityService } from "./activityService";
-export { teamService } from "./teamService";
 export * from "./profileService";
 
 // Re-export Supabase client and storage
