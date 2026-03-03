@@ -237,7 +237,7 @@ interface DataContextType {
     lead: Omit<Lead, "id" | "createdAt" | "status">,
     selfRegistered?: boolean,
     overrideTenantId?: string,
-  ) => Promise<void>;
+  ) => Promise<Lead | null>;
   updateLeadStatus: (leadId: number, status: LeadStatus) => Promise<void>;
   markLeadAsViewed: (leadId: number) => Promise<void>;
   markAllLeadsAsViewed: () => Promise<void>;
@@ -398,12 +398,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
     leadData: Omit<Lead, "id" | "createdAt" | "status">,
     selfRegistered = false,
     overrideTenantId?: string,
-  ) => {
+  ): Promise<Lead | null> => {
     const tid = overrideTenantId || tenantId || undefined;
     const newLead = await leadService.create(leadData, selfRegistered, tid);
     if (newLead) {
       setLeads((prev) => [newLead, ...prev]);
     }
+    return newLead;
   };
 
   const updateLeadStatus = async (leadId: number, status: LeadStatus) => {

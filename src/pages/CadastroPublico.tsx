@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   CheckCircle,
   Send,
@@ -11,6 +12,7 @@ import {
   Globe,
   Users,
   TrendingUp,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,8 +41,12 @@ const originOptions: {
 ];
 
 export default function CadastroPublico() {
-  const { addLead, addActivity } = useData();
+  const { addLead } = useData();
+  const [searchParams] = useSearchParams();
+  const tenantId = searchParams.get("t");
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -53,36 +59,48 @@ export default function CadastroPublico() {
     monthlyBudget: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
 
-    addLead(
-      {
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        company: formData.company || undefined,
-        origin: formData.origin,
-        notes: formData.notes || undefined,
-        followers: formData.followers
-          ? parseInt(formData.followers)
-          : undefined,
-        posts: formData.posts ? parseInt(formData.posts) : undefined,
-        monthlyBudget: formData.monthlyBudget
-          ? parseFloat(formData.monthlyBudget)
-          : undefined,
-      },
-      true,
-    ); // true = selfRegistered
+    if (!tenantId) {
+      setError("Link de cadastro inválido. Solicite um novo link.");
+      return;
+    }
 
-    // Criar atividade de novo lead auto-cadastrado
-    addActivity({
-      type: "lead",
-      title: "Novo Lead!",
-      description: `${formData.name}${formData.company ? ` - ${formData.company}` : ""} se cadastrou`,
-    });
+    setIsSubmitting(true);
 
-    setIsSubmitted(true);
+    try {
+      const newLead = await addLead(
+        {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          company: formData.company || undefined,
+          origin: formData.origin,
+          notes: formData.notes || undefined,
+          followers: formData.followers
+            ? parseInt(formData.followers)
+            : undefined,
+          posts: formData.posts ? parseInt(formData.posts) : undefined,
+          monthlyBudget: formData.monthlyBudget
+            ? parseFloat(formData.monthlyBudget)
+            : undefined,
+        },
+        true,
+        tenantId,
+      );
+
+      if (newLead) {
+        setIsSubmitted(true);
+      } else {
+        setError("Erro ao enviar cadastro. Tente novamente.");
+      }
+    } catch {
+      setError("Erro ao enviar cadastro. Tente novamente.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isSubmitted) {
@@ -337,12 +355,19 @@ export default function CadastroPublico() {
             </div>
 
             {/* Submit Button */}
+            {error && (
+              <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                {error}
+              </div>
+            )}
             <Button
               type="submit"
+              disabled={isSubmitting}
               className="w-full gradient-primary hover:opacity-90 text-white font-medium py-6 text-base"
             >
               <Send className="w-5 h-5 mr-2" />
-              Enviar Cadastro
+              {isSubmitting ? "Enviando..." : "Enviar Cadastro"}
             </Button>
 
             <p className="text-xs text-muted-foreground text-center">
