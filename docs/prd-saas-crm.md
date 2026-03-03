@@ -171,13 +171,13 @@ Transformar o TurbineApp em um CRM SaaS confiável, seguro e escalável, com aut
 | **RF‑RBAC‑02** — Admin pode criar/editar convites | ⚠️ | RBAC implementado, mas convites ainda não implementados |
 | **RF‑RBAC‑03** — Leitura não pode editar dados | ✅ | RLS restrictive policies + `src/components/auth/RoleRoute.tsx` |
 
-### 5.4 Times (colaboração interna) — ❌ Não implementado
+### 5.4 Times (colaboração interna) — ✅ Implementado
 
 | Requisito | Status | Referência |
 |-----------|--------|------------|
-| **RF‑TEAM‑01** — Usuários pertencem a times | ❌ | Tabelas `teams`/`team_members` não criadas no DB |
-| **RF‑TEAM‑02** — Compartilhamento por time | ❌ | — |
-| **RF‑TEAM‑03** — Admin gerencia times | ❌ | — |
+| **RF‑TEAM‑01** — Usuários pertencem a times | ✅ | `supabase/migrations/006_create_teams.sql` (tabelas `teams`/`team_members`), `src/services/teamService.ts` |
+| **RF‑TEAM‑02** — Compartilhamento por time | ✅ | RLS policies em `006_create_teams.sql`, membros com visibilidade por tenant |
+| **RF‑TEAM‑03** — Admin gerencia times | ✅ | `src/pages/Teams.tsx`, RBAC em `src/hooks/use-permissions.ts` |
 
 ### 5.5 Admin master (Turbine Tech) — ✅ Implementado
 
@@ -202,6 +202,6 @@ Transformar o TurbineApp em um CRM SaaS confiável, seguro e escalável, com aut
 | Autenticação (5.1) | ✅ Completo |
 | Multi‑tenant (5.2) | ✅ Completo |
 | RBAC (5.3) | ✅ Completo |
-| Times (5.4) | ❌ Não iniciado |
+| Times (5.4) | ✅ Completo |
 | Admin master (5.5) | ✅ Completo |
 | Onboarding (5.6) | ⚠️ Parcial |

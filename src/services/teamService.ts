@@ -35,7 +35,7 @@ const fromDbTeam = (row: Record<string, unknown>): Team => ({
   id: row.id as number,
   tenantId: row.tenant_id as string,
   name: row.name as string,
-  description: (row.description as string) || undefined,
+  description: (row.description as string | null) ?? undefined,
   createdAt: row.created_at as string,
 });
 

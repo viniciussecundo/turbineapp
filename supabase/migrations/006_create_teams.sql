@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS team_members (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   team_id BIGINT NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  role TEXT NOT NULL DEFAULT 'member',
+  role TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('leader', 'member')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(team_id, user_id)
 );
