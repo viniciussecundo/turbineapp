@@ -116,6 +116,31 @@ src/
     └── utils.ts            # Utilitários gerais
 ```
 
+## 🔗 Link Compartilhável de Cadastro
+
+Cada organização possui um link público único para auto-cadastro de leads. O link inclui o `tenant_id` da organização como parâmetro de URL:
+
+```
+https://seudominio.com/cadastro?t=<tenant-uuid>
+```
+
+### Como obter o link
+
+1. Acesse `/leads` no painel autenticado
+2. Clique no botão **"Link Compartilhável"**
+3. O link com o `tenant_id` correto é copiado automaticamente para a área de transferência
+
+> **Importante:** Links gerados sem o parâmetro `?t=` não funcionam. Sempre use o botão na página de Leads para garantir o link correto.
+
+### Como funciona
+
+- O formulário público em `/cadastro` lê o `tenant_id` do parâmetro `?t=` da URL
+- O lead é inserido diretamente no banco via policy RLS de insert anônimo (`leads: anon insert`)
+- Usuários anônimos têm permissão apenas de INSERT (sem SELECT), então a operação não lê o resultado de volta — apenas verifica se houve erro
+- O lead aparece imediatamente na página `/leads` do tenant correspondente com status `Novo` e marcado como `self_registered`
+
+---
+
 ## 🔧 Configuração de Origem dos Leads
 
 Para adicionar novas origens de leads, edite dois arquivos:
