@@ -306,7 +306,9 @@ export default function Leads() {
     if (leadToDelete) {
       const success = await deleteLead(leadToDelete.id);
       if (!success) {
-        toast.error("Não foi possível excluir o lead. Verifique suas permissões.");
+        toast.error(
+          "Não foi possível excluir o lead. Verifique suas permissões.",
+        );
       }
       setIsDeleteDialogOpen(false);
       setLeadToDelete(null);
@@ -704,7 +706,9 @@ export default function Leads() {
                               <Can permission="leads.edit">
                                 <>
                                   <DropdownMenuItem
-                                    onClick={() => handleOpenConvertDialog(lead)}
+                                    onClick={() =>
+                                      handleOpenConvertDialog(lead)
+                                    }
                                   >
                                     <UserPlus className="h-4 w-4 mr-2" />
                                     Converter em Cliente
