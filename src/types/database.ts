@@ -35,6 +35,7 @@ export type UserRole = "admin" | "sales" | "finance" | "viewer";
 export type ProfileStatus = "active" | "pending" | "blocked";
 export type TenantStatus = "active" | "suspended" | "cancelled";
 export type TenantPlan = "starter" | "pro" | "enterprise";
+export type TeamMemberRole = "leader" | "member";
 
 export interface Database {
   public: {
@@ -355,6 +356,52 @@ export interface Database {
           notes?: string | null;
         };
       };
+      teams: {
+        Row: {
+          id: number;
+          tenant_id: string;
+          name: string;
+          description: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: number;
+          tenant_id: string;
+          name: string;
+          description?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: number;
+          tenant_id?: string;
+          name?: string;
+          description?: string | null;
+          created_at?: string;
+        };
+      };
+      team_members: {
+        Row: {
+          id: number;
+          team_id: number;
+          user_id: string;
+          role: TeamMemberRole;
+          created_at: string;
+        };
+        Insert: {
+          id?: number;
+          team_id: number;
+          user_id: string;
+          role?: TeamMemberRole;
+          created_at?: string;
+        };
+        Update: {
+          id?: number;
+          team_id?: number;
+          user_id?: string;
+          role?: TeamMemberRole;
+          created_at?: string;
+        };
+      };
       activities: {
         Row: {
           id: number;
@@ -452,6 +499,7 @@ export interface Database {
       profile_status: ProfileStatus;
       tenant_status: TenantStatus;
       tenant_plan: TenantPlan;
+      team_member_role: TeamMemberRole;
     };
   };
 }

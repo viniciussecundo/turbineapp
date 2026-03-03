@@ -55,14 +55,17 @@ Estimativas em **story points (SP)**.
    - habilitar/desabilitar views e ações.
    - → `src/components/auth/RoleRoute.tsx`, RLS restrictive policies
 
-### Épico C — Times + Administração Master (total ~16 SP) ⚠️ PARCIAL
+### Épico C — Times + Administração Master (total ~16 SP) ✅ COMPLETO
 
-1. **C1 — Schema de times** (4 SP) ❌
+1. **C1 — Schema de times** (4 SP) ✅
    - tabelas `teams` e `team_members`.
-2. **C2 — UI de times** (5 SP) ❌
+   - → `supabase/migrations/006_create_teams.sql`
+2. **C2 — UI de times** (5 SP) ✅
    - criar time, adicionar/remover membros.
-3. **C3 — Compartilhamento por time** (4 SP) ❌
+   - → `src/pages/Teams.tsx`, `src/services/teamService.ts`, `src/contexts/DataContext.tsx`
+3. **C3 — Compartilhamento por time** (4 SP) ✅
    - regras de visibilidade por `team_id`.
+   - → RLS policies em `006_create_teams.sql`, RBAC em `src/hooks/use-permissions.ts`
 4. **C4 — Admin master (Turbine Tech)** (3 SP) ✅
    - validar/bloquear usuários, auditoria e listagem global.
    - → `src/pages/Admin.tsx`, `src/components/auth/AdminRoute.tsx`, RPCs em `003_jwt_claims_rbac.sql`
@@ -89,7 +92,7 @@ Estimativas em **story points (SP)**.
 |-------|--------|-----------|
 | A — Auth básico | ✅ Completo | 5/5 itens |
 | B — Multi‑tenant + RBAC | ✅ Completo | 5/5 itens |
-| C — Times + Admin Master | ⚠️ Parcial | 1/4 itens (C4) |
+| C — Times + Admin Master | ✅ Completo | 4/4 itens |
 | D — Onboarding | ⚠️ Parcial | 1/3 (criar tenant + perfil; convites pendentes) |
 | E — Auditoria e segurança | ❌ Não iniciado | 0/3 itens |
 

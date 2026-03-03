@@ -14,6 +14,11 @@ import { transactionService } from "@/services/transactionService";
 import { walletService } from "@/services/walletService";
 import { budgetService } from "@/services/budgetService";
 import { activityService } from "@/services/activityService";
+import { teamService } from "@/services/teamService";
+import type {
+  Team,
+  TeamMember,
+} from "@/services/teamService";
 import { isAbortError } from "@/lib/utils";
 
 // Types
@@ -215,6 +220,9 @@ export type ActivityType =
   | "budget"
   | "wallet";
 
+// Re-export team types from service for consumer convenience
+export type { Team, TeamMember } from "@/services/teamService";
+
 export interface Activity {
   id: number;
   type: ActivityType;
@@ -321,6 +329,23 @@ interface DataContextType {
   clearActivities: () => Promise<void>;
   getUnreadActivitiesCount: () => number;
 
+  // Times
+  teams: Team[];
+  teamMembers: TeamMember[];
+  addTeam: (team: { name: string; description?: string }) => Promise<void>;
+  updateTeam: (
+    teamId: number,
+    data: { name?: string; description?: string },
+  ) => Promise<void>;
+  deleteTeam: (teamId: number) => Promise<boolean>;
+  addTeamMember: (
+    teamId: number,
+    userId: string,
+    role?: "leader" | "member",
+  ) => Promise<void>;
+  removeTeamMember: (memberId: number) => Promise<boolean>;
+  getTeamMembers: (teamId: number) => TeamMember[];
+
   // Refresh data
   refreshData: () => Promise<void>;
 }
@@ -336,6 +361,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [wallets, setWallets] = useState<ClientWallet[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
 
   // Carregar dados iniciais do Supabase
   const loadData = useCallback(async () => {
@@ -348,6 +375,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         walletsData,
         budgetsData,
         activitiesData,
+        teamsData,
+        teamMembersData,
       ] = await Promise.all([
         leadService.getAll(),
         clientService.getAll(),
@@ -355,6 +384,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         walletService.getAll(),
         budgetService.getAll(),
         activityService.getAll(),
+        teamService.getAll(),
+        teamService.getAllMembers(),
       ]);
 
       setLeads(leadsData);
@@ -363,6 +394,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setWallets(walletsData);
       setBudgets(budgetsData);
       setActivities(activitiesData);
+      setTeams(teamsData);
+      setTeamMembers(teamMembersData);
     } catch (error) {
       if (!isAbortError(error)) {
         console.error("Erro ao carregar dados:", error);
@@ -383,6 +416,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setWallets([]);
       setBudgets([]);
       setActivities([]);
+      setTeams([]);
+      setTeamMembers([]);
       setIsLoading(false);
     }
   }, [session, loadData]);
@@ -839,6 +874,60 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return activities.filter((a) => !a.read).length;
   };
 
+  // ========================================
+  // TEAMS
+  // ========================================
+  const addTeam = async (teamData: { name: string; description?: string }) => {
+    const newTeam = await teamService.create(teamData, tenantId || undefined);
+    if (newTeam) {
+      setTeams((prev) => [newTeam, ...prev]);
+    }
+  };
+
+  const updateTeam = async (
+    teamId: number,
+    data: { name?: string; description?: string },
+  ) => {
+    const updated = await teamService.update(teamId, data);
+    if (updated) {
+      setTeams((prev) =>
+        prev.map((team) => (team.id === teamId ? updated : team)),
+      );
+    }
+  };
+
+  const deleteTeam = async (teamId: number): Promise<boolean> => {
+    const success = await teamService.delete(teamId);
+    if (success) {
+      setTeams((prev) => prev.filter((t) => t.id !== teamId));
+      setTeamMembers((prev) => prev.filter((m) => m.teamId !== teamId));
+    }
+    return success;
+  };
+
+  const addTeamMember = async (
+    teamId: number,
+    userId: string,
+    role: "leader" | "member" = "member",
+  ) => {
+    const newMember = await teamService.addMember(teamId, userId, role);
+    if (newMember) {
+      setTeamMembers((prev) => [...prev, newMember]);
+    }
+  };
+
+  const removeTeamMember = async (memberId: number): Promise<boolean> => {
+    const success = await teamService.removeMember(memberId);
+    if (success) {
+      setTeamMembers((prev) => prev.filter((m) => m.id !== memberId));
+    }
+    return success;
+  };
+
+  const getTeamMembers = (teamId: number): TeamMember[] => {
+    return teamMembers.filter((m) => m.teamId === teamId);
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -882,6 +971,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
         markAllActivitiesAsRead,
         clearActivities,
         getUnreadActivitiesCount,
+        teams,
+        teamMembers,
+        addTeam,
+        updateTeam,
+        deleteTeam,
+        addTeamMember,
+        removeTeamMember,
+        getTeamMembers,
         refreshData,
       }}
     >

@@ -25,6 +25,7 @@ import Onboarding from "./pages/Onboarding";
 import ResetPassword from "./pages/ResetPassword";
 import UpdatePassword from "./pages/UpdatePassword";
 import Admin from "./pages/Admin";
+import Teams from "./pages/Teams";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -70,6 +71,7 @@ const App = () => (
                       <Route path="/orcamentos" element={<Orcamentos />} />
                       <Route path="/relatorios" element={<Relatorios />} />
                       <Route path="/configuracoes" element={<Settings />} />
+                      <Route path="/times" element={<Teams />} />
                     </Route>
                   </Route>
                 </Route>
