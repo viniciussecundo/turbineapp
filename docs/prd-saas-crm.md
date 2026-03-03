@@ -40,7 +40,7 @@ Transformar o TurbineApp em um CRM SaaS confiável, seguro e escalável, com aut
 ### 5.1 Autenticação (Login/Sessão)
 **RF‑AUTH‑01** — Login com e‑mail e senha.  
 **RF‑AUTH‑02** — Reset de senha por e‑mail.  
-**RF‑AUTH‑03** — Sessões com token de atualização (refresh token).  
+**RF‑AUTH‑03** — Sessões com token de atualização.  
 **RF‑AUTH‑04** — Logout global (revogar sessões ativas).  
 **RF‑AUTH‑05** — MFA opcional (TOTP) no plano Pro.  
 

@@ -81,7 +81,7 @@ Por padrão, o schema habilita **Segurança em Nível de Linha (RLS)** com polí
 
 1. Implementar autenticação (Supabase Auth)
 2. Criar políticas de acesso por usuário
-3. Remover as políticas "Permitir tudo" (Allow all)
+3. Remover as políticas de "Permitir tudo"
 
 Exemplo de política segura:
 
@@ -154,7 +154,7 @@ Se você tinha dados no LocalStorage, eles não são migrados automaticamente. P
 ### Erro: "permission denied"
 
 - Verifique as políticas RLS
-- Certifique-se que as políticas "Permitir tudo" (Allow all) foram criadas
+- Certifique-se que as políticas de "Permitir tudo" foram criadas
 
 ## Suporte
 
