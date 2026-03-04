@@ -37,6 +37,13 @@ export default function Onboarding() {
     return <Navigate to="/login" replace />;
   }
 
+  // Se há um token de convite pendente, redirecionar para a página de convite
+  // ao invés de mostrar o form de "Criar Organização"
+  const pendingToken = localStorage.getItem("pending_invite_token");
+  if (pendingToken) {
+    return <Navigate to={`/convite/${pendingToken}`} replace />;
+  }
+
   const handleBackToLogin = async () => {
     await signOut();
     navigate("/login", { replace: true });

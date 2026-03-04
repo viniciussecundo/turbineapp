@@ -80,6 +80,12 @@ export default function Convite() {
     }
 
     setInvite(result.data);
+
+    // Persistir token para que, se o user cair no /onboarding após signup/email confirm,
+    // seja redirecionado de volta para cá automaticamente.
+    if (token) {
+      localStorage.setItem("pending_invite_token", token);
+    }
   }, [token]);
 
   // Load invite data on mount
@@ -163,6 +169,7 @@ export default function Convite() {
     toast.success("Bem-vindo!", {
       description: `Você entrou na organização ${invite?.tenantName}`,
     });
+    localStorage.removeItem("pending_invite_token");
     navigate("/", { replace: true });
   };
 
@@ -218,8 +225,16 @@ export default function Convite() {
     toast.success("Bem-vindo!", {
       description: `Você entrou na organização ${invite?.tenantName}`,
     });
+    localStorage.removeItem("pending_invite_token");
     navigate("/", { replace: true });
   };
+
+  // Limpar token pendente quando o convite é inválido ou o user já tem org
+  useEffect(() => {
+    if (pageState === "error" || pageState === "already_member") {
+      localStorage.removeItem("pending_invite_token");
+    }
+  }, [pageState]);
 
   // -- Render helpers --
 
