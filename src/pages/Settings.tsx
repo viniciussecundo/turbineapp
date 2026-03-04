@@ -175,6 +175,15 @@ export default function Settings() {
     loadInvitations();
   }, [loadMembers, loadInvitations]);
 
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      void loadMembers();
+      void loadInvitations();
+    }, 15000);
+
+    return () => window.clearInterval(intervalId);
+  }, [loadMembers, loadInvitations]);
+
   const handleRoleChange = async (memberId: string, newRole: UserRole) => {
     setActionLoading(memberId);
     const result = await updateMemberRole(memberId, newRole);
@@ -259,6 +268,18 @@ export default function Settings() {
     setActionLoading(null);
 
     if (result.error) {
+      const message = result.error.toLowerCase();
+      // Se já não estiver pendente, tratamos como estado convergente e recarregamos.
+      if (
+        message.includes("já processado") ||
+        message.includes("não encontrado") ||
+        message.includes("nao encontrado")
+      ) {
+        toast.info("Este convite já não estava pendente.");
+        await loadInvitations();
+        return;
+      }
+
       toast.error("Erro ao revogar convite", {
         description: result.error,
       });

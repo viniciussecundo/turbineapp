@@ -248,7 +248,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const acceptInviteAndJoin = async (token: string, fullName: string) => {
-    if (!user) {
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+    const currentUser = user ?? authUser;
+
+    if (!currentUser) {
       return { error: "Usuário não autenticado" };
     }
 
@@ -261,7 +266,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     await supabase.auth.refreshSession();
 
     // Recarregar profile
-    await loadProfile(user.id);
+    await loadProfile(currentUser.id);
 
     return {};
   };

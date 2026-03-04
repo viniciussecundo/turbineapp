@@ -61,6 +61,7 @@ export default function Convite() {
   const [fullName, setFullName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [formInfo, setFormInfo] = useState<string | null>(null);
 
   // Login mode toggle (for existing users without org)
   const [showLogin, setShowLogin] = useState(false);
@@ -111,6 +112,7 @@ export default function Convite() {
   const handleSignupSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setFormError(null);
+    setFormInfo(null);
 
     if (!email.trim()) {
       setFormError("Informe seu e-mail.");
@@ -150,11 +152,24 @@ export default function Convite() {
     }
 
     if (!signUpData.user || !signUpData.session) {
-      setFormError(
-        "Conta criada! Verifique seu e-mail para confirmar e depois acesse este link novamente.",
-      );
-      setIsSubmitting(false);
-      return;
+      // Em projetos com confirmação de e-mail obrigatória, o signup não retorna sessão.
+      // Tentamos login imediato para cenários sem confirmação e, se não for possível,
+      // guiamos o usuário para concluir após confirmar o e-mail.
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (signInError) {
+        setShowLogin(true);
+        setPassword("");
+        setConfirmPassword("");
+        setFormInfo(
+          "Conta criada. Confirme seu e-mail e depois faça login para concluir a entrada na organização.",
+        );
+        setIsSubmitting(false);
+        return;
+      }
     }
 
     // Step 2: Accept the invite
@@ -177,6 +192,7 @@ export default function Convite() {
   const handleLoginSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setFormError(null);
+    setFormInfo(null);
 
     if (!email.trim() || !password) {
       setFormError("Informe e-mail e senha.");
@@ -206,6 +222,7 @@ export default function Convite() {
   const handleAcceptSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setFormError(null);
+    setFormInfo(null);
 
     if (!fullName.trim()) {
       setFormError("Informe seu nome.");
@@ -366,6 +383,12 @@ export default function Convite() {
                 </div>
               )}
 
+              {formInfo && (
+                <div className="p-3 rounded-lg bg-blue-500/10 text-blue-300 text-sm text-center">
+                  {formInfo}
+                </div>
+              )}
+
               <Button
                 type="submit"
                 className="w-full gradient-primary text-white hover:opacity-90"
@@ -450,6 +473,12 @@ export default function Convite() {
               {formError && (
                 <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm text-center">
                   {formError}
+                </div>
+              )}
+
+              {formInfo && (
+                <div className="p-3 rounded-lg bg-blue-500/10 text-blue-300 text-sm text-center">
+                  {formInfo}
                 </div>
               )}
 
