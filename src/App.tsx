@@ -21,6 +21,7 @@ import CadastroPublico from "./pages/CadastroPublico";
 import Login from "./pages/Login";
 
 import Onboarding from "./pages/Onboarding";
+import Convite from "./pages/Convite";
 import ResetPassword from "./pages/ResetPassword";
 import UpdatePassword from "./pages/UpdatePassword";
 import Admin from "./pages/Admin";
@@ -48,6 +49,9 @@ const App = () => (
 
                 {/* Rota de onboarding (autenticado sem profile) */}
                 <Route path="/onboarding" element={<Onboarding />} />
+
+                {/* Rota de convite (acessível por qualquer um) */}
+                <Route path="/convite/:token" element={<Convite />} />
 
                 {/* Rota pública - sem layout */}
                 <Route path="/cadastro" element={<CadastroPublico />} />

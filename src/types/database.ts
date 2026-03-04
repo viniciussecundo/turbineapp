@@ -35,6 +35,7 @@ export type UserRole = "admin" | "sales" | "finance" | "viewer";
 export type ProfileStatus = "active" | "pending" | "blocked";
 export type TenantStatus = "active" | "suspended" | "cancelled";
 export type TenantPlan = "starter" | "pro" | "enterprise";
+export type InvitationStatus = "pending" | "accepted" | "revoked" | "expired";
 
 export interface Database {
   public: {
@@ -393,6 +394,47 @@ export interface Database {
           created_at?: string;
         };
       };
+      invitations: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          token: string;
+          role: UserRole;
+          invited_email: string | null;
+          status: InvitationStatus;
+          created_by: string;
+          accepted_by: string | null;
+          expires_at: string;
+          created_at: string;
+          accepted_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          token?: string;
+          role?: UserRole;
+          invited_email?: string | null;
+          status?: InvitationStatus;
+          created_by: string;
+          accepted_by?: string | null;
+          expires_at?: string;
+          created_at?: string;
+          accepted_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string;
+          token?: string;
+          role?: UserRole;
+          invited_email?: string | null;
+          status?: InvitationStatus;
+          created_by?: string;
+          accepted_by?: string | null;
+          expires_at?: string;
+          created_at?: string;
+          accepted_at?: string | null;
+        };
+      };
     };
     Views: {
       [_ in never]: never;
@@ -437,6 +479,33 @@ export interface Database {
         };
         Returns: undefined;
       };
+      create_invitation: {
+        Args: {
+          p_role?: UserRole;
+          p_invited_email?: string | null;
+          p_expires_in_days?: number;
+        };
+        Returns: Json;
+      };
+      get_invitation_by_token: {
+        Args: {
+          p_token: string;
+        };
+        Returns: Json;
+      };
+      accept_invitation: {
+        Args: {
+          p_token: string;
+          p_full_name: string;
+        };
+        Returns: Json;
+      };
+      revoke_invitation: {
+        Args: {
+          p_invitation_id: string;
+        };
+        Returns: undefined;
+      };
     };
     Enums: {
       lead_status: LeadStatus;
@@ -452,6 +521,7 @@ export interface Database {
       profile_status: ProfileStatus;
       tenant_status: TenantStatus;
       tenant_plan: TenantPlan;
+      invitation_status: InvitationStatus;
     };
   };
 }

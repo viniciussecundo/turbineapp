@@ -10,6 +10,7 @@ import {
 import type { Session, User } from "@supabase/supabase-js";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { isAbortError } from "@/lib/utils";
+import { acceptInvitation as acceptInvitationService } from "@/services/invitationService";
 import type { UserRole, ProfileStatus } from "@/types/database";
 
 // ========================================
@@ -37,6 +38,10 @@ interface AuthContextValue {
   signOut: () => Promise<{ error?: string }>;
   createTenantProfile: (
     tenantName: string,
+    fullName: string,
+  ) => Promise<{ error?: string }>;
+  acceptInviteAndJoin: (
+    token: string,
     fullName: string,
   ) => Promise<{ error?: string }>;
   refreshProfile: () => Promise<void>;
@@ -242,6 +247,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return {};
   };
 
+  const acceptInviteAndJoin = async (token: string, fullName: string) => {
+    if (!user) {
+      return { error: "Usuário não autenticado" };
+    }
+
+    const result = await acceptInvitationService(token, fullName);
+    if (result.error) {
+      return { error: result.error };
+    }
+
+    // Forçar refresh do JWT para incluir novos claims (tenant_id, user_role)
+    await supabase.auth.refreshSession();
+
+    // Recarregar profile
+    await loadProfile(user.id);
+
+    return {};
+  };
+
   // needsOnboarding: autenticado mas sem profile (precisa criar organização)
   const needsOnboarding = !!session && !isLoading && !profile;
 
@@ -257,10 +281,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
       signIn,
       signOut,
       createTenantProfile,
+      acceptInviteAndJoin,
       refreshProfile,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [user, session, profile, isLoading, needsOnboarding, isPasswordRecovery, refreshProfile],
+    [
+      user,
+      session,
+      profile,
+      isLoading,
+      needsOnboarding,
+      isPasswordRecovery,
+      refreshProfile,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
