@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { validateEmail, validatePhone } from "@/lib/validation";
 import {
   Plus,
   Search,
@@ -184,17 +185,11 @@ export default function Leads() {
       errors.name = "Nome é obrigatório";
     }
 
-    if (!formData.email.trim()) {
-      errors.email = "Email é obrigatório";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = "Email inválido";
-    }
+    const emailError = validateEmail(formData.email);
+    if (emailError) errors.email = emailError;
 
-    if (!formData.phone.trim()) {
-      errors.phone = "Telefone é obrigatório";
-    } else if (formData.phone.replace(/\D/g, "").length < 10) {
-      errors.phone = "Telefone inválido";
-    }
+    const phoneError = validatePhone(formData.phone);
+    if (phoneError) errors.phone = phoneError;
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;

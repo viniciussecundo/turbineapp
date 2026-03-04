@@ -24,12 +24,23 @@ export default function UpdatePassword() {
     check();
   }, []);
 
+  const validatePassword = (pw: string): string | null => {
+    if (pw.length < 8) return "A senha deve ter pelo menos 8 caracteres.";
+    if (!/[A-Z]/.test(pw))
+      return "A senha deve conter pelo menos uma letra maiuscula.";
+    if (!/[0-9]/.test(pw)) return "A senha deve conter pelo menos um numero.";
+    if (!/[^A-Za-z0-9]/.test(pw))
+      return "A senha deve conter pelo menos um caractere especial (!@#$...).";
+    return null;
+  };
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setError(null);
 
-    if (password.length < 6) {
-      setError("A senha deve ter pelo menos 6 caracteres.");
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
 
@@ -112,7 +123,7 @@ export default function UpdatePassword() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Minimo 6 caracteres"
+                placeholder="Minimo 8 caracteres, maiuscula, numero e simbolo"
                 className="bg-secondary/50 border-white/10 focus:border-primary/50"
                 disabled={isSubmitting}
               />

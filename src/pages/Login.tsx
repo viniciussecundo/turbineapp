@@ -18,7 +18,12 @@ export default function Login() {
 
   const redirectPath = useMemo(() => {
     const state = location.state as { from?: Location } | null;
-    return state?.from?.pathname || "/";
+    const pathname = state?.from?.pathname;
+    // Validate path is internal: must start with "/" but not "//" (protocol-relative external URL)
+    if (pathname && pathname.startsWith("/") && !pathname.startsWith("//")) {
+      return pathname;
+    }
+    return "/";
   }, [location.state]);
 
   const handleSubmit = async (event: FormEvent) => {

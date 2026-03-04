@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { validateEmail, validatePhone } from "@/lib/validation";
 import {
   CheckCircle,
   Send,
@@ -40,6 +41,9 @@ const originOptions: {
   { value: "outro", label: "Outro", icon: Globe },
 ];
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default function CadastroPublico() {
   const { addLead } = useData();
   const [searchParams] = useSearchParams();
@@ -63,8 +67,20 @@ export default function CadastroPublico() {
     e.preventDefault();
     setError(null);
 
-    if (!tenantId) {
+    if (!tenantId || !UUID_REGEX.test(tenantId)) {
       setError("Link de cadastro inválido. Solicite um novo link.");
+      return;
+    }
+
+    const emailError = validateEmail(formData.email);
+    if (emailError) {
+      setError(emailError);
+      return;
+    }
+
+    const phoneError = validatePhone(formData.phone);
+    if (phoneError) {
+      setError(phoneError);
       return;
     }
 
@@ -162,6 +178,7 @@ export default function CadastroPublico() {
                 id="name"
                 type="text"
                 required
+                maxLength={100}
                 value={formData.name}
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
@@ -184,6 +201,7 @@ export default function CadastroPublico() {
                 id="email"
                 type="email"
                 required
+                maxLength={254}
                 value={formData.email}
                 onChange={(e) =>
                   setFormData({ ...formData, email: e.target.value })
@@ -206,6 +224,7 @@ export default function CadastroPublico() {
                 id="phone"
                 type="tel"
                 required
+                maxLength={20}
                 value={formData.phone}
                 onChange={(e) =>
                   setFormData({ ...formData, phone: e.target.value })
@@ -227,6 +246,7 @@ export default function CadastroPublico() {
               <Input
                 id="company"
                 type="text"
+                maxLength={100}
                 value={formData.company}
                 onChange={(e) =>
                   setFormData({ ...formData, company: e.target.value })
@@ -278,6 +298,7 @@ export default function CadastroPublico() {
               </Label>
               <Textarea
                 id="notes"
+                maxLength={1000}
                 value={formData.notes}
                 onChange={(e) =>
                   setFormData({ ...formData, notes: e.target.value })
